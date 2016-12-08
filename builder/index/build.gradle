@@ -1,0 +1,114 @@
+group 'index'
+version '0.1'
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'application'
+
+sourceCompatibility = 1.7
+mainClassName="InvertedIndex.InvertedIndexGenerate"
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    jcenter()
+
+   // maven{ url 'http://maven.oschina.net/content/groups/public/'}
+    maven{ url 'http://repo1.maven.org/maven2'}
+}
+
+def var = dependencies {
+    compile group: 'org.apache.hadoop', name: 'hadoop-common', version: '2.7.1'
+    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-core', version: '2.7.1'
+    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-common', version: '2.7.1'
+    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-jobclient', version: '2.7.1'
+
+    compile group: 'org.apache.hadoop', name: 'hadoop-yarn-api', version: '2.7.1'
+    compile group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '2.7.1'
+    compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.1.0'
+
+
+    compile group: 'commons-configuration', name: 'commons-configuration', version: '1.9'
+    compile group: 'org.apache.commons', name: 'commons-compress', version: '1.4.1'
+
+    //compile fileTree(dir: 'libs', include: 'hadoop-0.20.2.1U11-core.jar')
+    compile fileTree(dir: 'libs', include: 'json.jar')
+    //compile fileTree(dir: 'libs', include: 'protobuf-java-3.0.0-beta-2.jar')
+    compile fileTree(dir: 'libs', include: 'ikanalyzer2012ff.jar')
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+var
+
+def copyFile(String src, dst) {
+    def srcFile = new File(src)
+    def dstFile = new File(dst)
+    dstFile.withOutputStream{ os->
+        srcFile.withInputStream{ ins->
+            os << ins   //利用OutputStream的<<操作符重载，完成从inputstream到OutputStream
+            //的输出
+        }
+    }
+}
+
+
+task createDocs {
+    def docs = file("$buildDir/docs")
+    outputs.dir docs
+    doLast {
+        docs.mkdirs()
+        new File(docs, "readme.txt").write("Read me!")
+    }
+}
+
+task createEtc  {
+    def etc = file("$buildDir/etc")
+    outputs.dir etc
+    doLast {
+        etc.mkdirs()
+        copyFile('src/main/etc/IKAnalyzer.cfg.xml', "$buildDir/etc/IKAnalyzer.cfg.xml")
+        copyFile('src/main/etc/test.json', "$buildDir/etc/test.json")
+
+    }
+}
+
+task createBin  {
+    def etc = file("$buildDir/bin")
+    outputs.dir etc
+    doLast {
+        etc.mkdirs()
+        copyFile('src/main/bin/mock_start.sh', "$buildDir/bin/mock_start.sh")
+        copyFile('src/main/bin/start.sh', "$buildDir/bin/start.sh")
+        copyFile('src/main/bin/demo.sh', "$buildDir/bin/demo.sh")
+    }
+}
+
+
+task cpLibs (dependsOn : ['jar',':indexmeta:jar',':docmeta:jar']) {
+    def lib = file("$buildDir/libs")
+    outputs.dir lib
+    doLast {
+        lib.mkdirs()
+        copyFile('../indexmeta/build/libs/indexmeta-' + version + '.jar', "$buildDir/libs/indexmeta-" + version + '.jar');
+        copyFile('../docmeta/build/libs/docmeta-' + version + '.jar', "$buildDir/libs/docmeta-" + version + '.jar');
+    }
+}
+
+distributions {
+    main {
+        contents {
+            from(createDocs) {
+                into "docs"
+            }
+            from(createEtc) {
+                into "etc"
+            }
+            from(cpLibs) {
+                from "$buildDir/libs/*" into "lib"
+            }
+            from(createBin) {
+                into "bin"
+            }
+        }
+    }
+}

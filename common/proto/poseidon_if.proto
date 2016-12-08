@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package proto;
+option java_outer_classname = "PoseidonIf";
+
+// protoc --go_out=. *.proto
+// protoc --java_out=. *.proto
+
+// 原始数据按照gz压缩文件格式存放在hdfs中
+// 每128行原始数据合在一起称为一个 Document（文档）
+// 一个hdfs文件按照2GB大小计算，大约可以容纳 10w 个压缩后的 Document
+// 我们用 DocGzMeta 结构来描述文档相关的元数据信息
+message DocGzMeta {
+	string path = 1; // HDFS路径，例如：/the/path/to/log/business/2014-04-22/00/log1.zwt.2014-04-22-00-17.gz, 实际离线存储的时候会做一定的压缩，例如不存储公共前缀。
+	uint64 offset = 2; // 数据起始偏移量
+	uint32 length = 3; // 数据长度
+}
+
+message DocId {
+	uint64 docId = 1;   // Document ID
+	uint32 rowIndex = 2;// 在文档中的行号，从0开始编号
+}
+
+// 一个分词可能会出现多个文档中，由于每个文档有多行原始数据组成
+// 每个关联数据需要 docId、rawIndex 两个信息来描述
+message DocIdList {
+
+	// 该分词所关联的 Document ID。按照 docId 升序排列
+	// 为了方便 protobuf 的 varint 压缩存储，采用差分数据来存储
+	// 差分数据：后一个数据的存储值等于它的原始值减去前一个数据的原始值
+	// 举例如下：
+	// 假如原始 docId 列表为：1,3,4,7,9,115,120,121,226
+	// 那么实际存储的数据为： 1,2,1,3,2,106,6,1,105
+	repeated DocId docIds = 1;
+
+	//    // ext
+	//    string path = 2;
+	//    uint32 offset = 3; // 数据起始偏移量
+	//    uint32 length = 4; // 数据长度
+}
+
+// 压缩的docIdList, 使用FastPFOR算法压缩，两个数组解压后等长
+message FastPForCompressedDocIdList {
+	repeated uint64 docList = 1; // 压缩的 doc id 列表
+	repeated uint32 rowList = 2; // 压缩的 row index 列表
+}
+
+
+
+// Token->DocIds 倒排索引表结构。这个索引数据压缩后最终每天需要占用2TB空间。
+// hashid=hash64(token)%100亿，重复(冲突)不影响
+// 直接在hdfs上进行分词，中间数据文件(按照hashid排序，总共100亿行)：hashid token list<DocId>
+//
+// 索引文件创建过程:
+//		N := 200 取N=200，每200个左右的分词组建一个InvertedIndex对象
+//		for i := 0; ; i++ {
+//			1. 取 hashid 在 [ i*N,(i+1)*N ) 这个区间中的分词及其DocId列表
+//			2. 生成一个 InvertedIndex 对象，序列化，gz压缩，追加到hdfs文件中
+//			3. 记录下四元组: <hdfspath, i, offset, length>
+//		}
+//
+//		上述第3步中记录的四元组中 hdfspath、hashid 两个字段可以根据规则推测出来，因此只需要记录offset、length即可
+//		总共需要记录 5000w (=总分词数/N) 条数，每个8字节，总计需要400M，这个文件可以存放在hdfs中，加载的时候可以加载到缓存中(NoSQL)
+message InvertedIndex {
+	map<string/*分词*/, DocIdList> index = 1;
+}
+
+message FastPForCompressedInvertedIndex {
+	map<string/*分词*/, FastPForCompressedDocIdList> index = 1;
+}
+
+// Pdz 压缩算法是针对Protobuf的 Repeated 字段的一种压缩算法，详细实现情况请见： pdz_compress.go
+message PdzCompressedInvertedIndex {
+	map<string/*分词*/, string/*使用pdz压缩算法将DocIdList序列化后的二进制数据*/> index = 1;
+}
+
+// 存入NoSQL中，Key=int(hashid/N)
+message InvertedIndexGzMeta {
+	uint64 offset = 1; // 某一个 *InvertedIndexGzMeta* 所在 hdfs 文件中的起始地址偏移量
+	uint32 length = 2; // *InvertedIndexGzMeta* 的所占数据长度
+	string path = 3; // 可以根据时间、索引表名、hashid等信息推断出来
+	//    uint32 hashid = 4; // 可以通过 *Token* 进行hash运算计算出来
+}

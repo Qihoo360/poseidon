@@ -1,0 +1,4 @@
+rootProject.name = 'index'
+includeFlat 'indexmeta'
+includeFlat 'docmeta'
+

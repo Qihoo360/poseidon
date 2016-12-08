@@ -1,0 +1,63 @@
+group 'hdfsreader'
+version '0.1'
+
+apply plugin: 'java'
+apply plugin: 'application'
+
+sourceCompatibility = 1.7
+mainClassName="Reader"
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    jcenter()
+
+    maven{ url 'http://repo1.maven.org/maven2'}
+}
+
+def var = dependencies {
+    compile group: 'org.apache.hadoop', name: 'hadoop-common', version: '2.7.1'
+}
+var
+
+def copyFile(String src, dst) {
+    def srcFile = new File(src)
+    def dstFile = new File(dst)
+    dstFile.withOutputStream{ os->
+        srcFile.withInputStream{ ins->
+            os << ins
+        }
+    }
+}
+
+task createEtc  {
+    def etc = file("$buildDir/etc")
+    outputs.dir etc
+    doLast {
+        etc.mkdirs()
+        copyFile('src/main/etc/log4j.properties', "$buildDir/etc/log4j.properties")
+        copyFile('src/main/etc/core-site.xml', "$buildDir/etc/core-site.xml")
+    }
+}
+
+task createBin  {
+    def bin = file("$buildDir/bin")
+    outputs.dir bin
+    doLast {
+        bin.mkdirs()
+        copyFile('src/main/script/hdfsReader.sh', "$buildDir/bin/hdfsReader.sh")
+    }
+}
+
+distributions {
+    main {
+        contents {
+            from(createEtc) {
+                into "etc"
+            }
+            from(createBin) {
+                into "bin"
+            }
+        }
+    }
+}

@@ -1,0 +1,60 @@
+{
+	"ImportPath": "github.com/Qihoo360/poseidon/service",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v74",
+	"Deps": [
+		{
+			"ImportPath": "github.com/bradfitz/gomemcache/memcache",
+			"Comment": "release.r60-41-gfb1f79c",
+			"Rev": "fb1f79c6b65acda83063cbc69f6bba1522558bfc"
+		},
+		{
+			"ImportPath": "github.com/deckarep/golang-set",
+			"Comment": "v1.5-4-g1f0f4ff",
+			"Rev": "1f0f4ff8d3fbef9328522993ce71c35890f67554"
+		},
+		{
+			"ImportPath": "github.com/garyburd/redigo/internal",
+			"Rev": "4ed1111375cbeb698249ffe48dd463e9b0a63a7a"
+		},
+		{
+			"ImportPath": "github.com/garyburd/redigo/redis",
+			"Rev": "4ed1111375cbeb698249ffe48dd463e9b0a63a7a"
+		},
+		{
+			"ImportPath": "github.com/golang/glog",
+			"Rev": "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
+		},
+		{
+			"ImportPath": "github.com/golang/protobuf/proto",
+			"Rev": "7cc19b78d562895b13596ddce7aafb59dd789318"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Comment": "v1.1-2-ga8d44e7",
+			"Rev": "a8d44e7d8e4d532b6a27a02dd82abb31cc1b01bd"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Comment": "v1.1-7-g9c19ed5",
+			"Rev": "9c19ed558d5df4da88e2ade9c8940d742aef0e7e"
+		},
+		{
+			"ImportPath": "github.com/spaolacci/murmur3",
+			"Rev": "0d12bf811670bf6a1a63828dfbd003eded177fce"
+		},
+		{
+			"ImportPath": "github.com/zieckey/dbuf",
+			"Rev": "406bb753d347836acd203d9f59a427003bd1425b"
+		},
+		{
+			"ImportPath": "github.com/zieckey/goini",
+			"Comment": "release-1.1-15-g4a0b7ae",
+			"Rev": "4a0b7ae0996c59823dfb6d626738733a083da3b1"
+		},
+		{
+			"ImportPath": "github.com/zieckey/simgo",
+			"Rev": "a03dd2ed7afe2add806fcb9376d9ca21e9e836e8"
+		}
+	]
+}

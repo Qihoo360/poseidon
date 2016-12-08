@@ -1,0 +1,31 @@
+group 'indexmeta'
+version '0.1'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+
+repositories {
+    mavenCentral()
+}
+
+def var
+var = dependencies {
+    compile group: 'org.apache.hadoop', name: 'hadoop-common', version: '2.7.1'
+    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-core', version: '2.7.1'
+    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-common', version: '2.7.1'
+
+    compile group: 'commons-configuration', name: 'commons-configuration', version: '1.9'
+    compile group: 'org.apache.commons', name: 'commons-compress', version: '1.4.1'
+    compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.1.0'
+
+    //compile fileTree(dir: 'libs', include: 'hadoop-0.20.2.1U11-core.jar')
+    //compile fileTree(dir: '../index/build/libs', include: 'index-0.1-SNAPSHOT.jar')
+    compile files('../index/build/libs/index-' + version + '.jar')
+
+    compile fileTree(dir: '../index/libs', include: 'json.jar')
+
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+var

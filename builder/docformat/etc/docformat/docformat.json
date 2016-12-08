@@ -1,0 +1,62 @@
+{
+	"src_provider": {
+		"src_type":"dm",
+		"dm": {
+			"monitor_interval_sec":15,
+			"pop_last_file":false,
+			"time_out_ms":1000,
+			"data_dir":"./logs",
+			"monitor_paths": [
+                "/home/poseidon/data"
+			]
+		}
+	},
+	"main":
+	{
+		"processor_num":1,
+		"collector_num":5,
+		"msg_chan_size":2,
+		"item_chan_size":2,
+
+		"max_procs":30,
+
+		"tick_sec":20,
+		"mem_limit":5000
+	},
+
+	"processor": {
+		"LogtoHdfsProcessor":true
+	},
+
+	"collector": {
+		"logto_hdfs":"LogtoHdfsCollector"
+	},
+	"Hdfs": {
+		"fixed_idc":"idc",
+		"use_fixed_idc":true,
+
+		"write_dirs": [
+			"./data/dest_1",
+			"./data/dest_2"
+		],
+		"hadoop_remote_dir":"/home/poseidon/src/test",
+		"hadoop_remote_time_dirs": [
+			"Y-m-d"
+		],
+		"hadoop_remote_file_prefix":"",
+		"hadoop_remote_file_suffix":".gz",
+		"flush_minute":20,
+		"max_merge_file_size":50000000,
+		"retry_times":3,
+		"hadoop_cmd":"./bin/local-hadoop.sh",
+		"gather_minute":15,
+
+		"tick_interval":1,
+
+        "poseidon_mode":true,
+        "doc_lines":128,
+	    "readbuf_size_byte":40960000,
+	    "docid_domain":"127.0.0.1:39360",
+	    "docid_business":"test"
+	}
+}
