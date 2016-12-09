@@ -13,7 +13,6 @@ import (
 
 var (
 	ErrConvert = errors.New("convert error")
-	Sqp        *SearchRequestParams
 	mu         sync.Mutex
 )
 
@@ -50,10 +49,13 @@ func NewQuery() *QueryBody {
 
 type Proxy struct {
 	poseidon_search_url string
+	Sqp                 *SearchRequestParams
 }
 
 func New() *Proxy {
-	return &Proxy{}
+	return &Proxy{
+		Sqp: NewSearchRequestParams(),
+	}
 }
 
 func (p *Proxy) Initialize() error {
@@ -61,7 +63,7 @@ func (p *Proxy) Initialize() error {
 	p.poseidon_search_url, _ = fw.Conf.SectionGet("proxy", "poseidon_search_url")
 
 	simgo.HandleFunc("/service/proxy/mdsearch", p.MdsearchAction, p).Methods("POST")
-	Sqp = NewSearchRequestParams()
+	p.Sqp = NewSearchRequestParams()
 	return nil
 }
 
@@ -74,8 +76,8 @@ func (p *Proxy) Uninitialize() error {
  * @param  {[type]} this *SearchController) MdsearchAction( [description]
  * @return {[type]}      [description]
  */
-func (this *Proxy) MdsearchAction(w http.ResponseWriter, r *http.Request) {
-	days, err := this.GetDays(r)
+func (p *Proxy) MdsearchAction(w http.ResponseWriter, r *http.Request) {
+	days, err := p.GetDays(r)
 	if err != nil {
 		panic(err)
 	}
@@ -89,7 +91,7 @@ func (this *Proxy) MdsearchAction(w http.ResponseWriter, r *http.Request) {
 		if day == "" {
 			continue
 		}
-		go this.send(day, c)
+		go p.send(day, c)
 	}
 
 	//recieve result
@@ -111,16 +113,16 @@ func (this *Proxy) MdsearchAction(w http.ResponseWriter, r *http.Request) {
  * @param  {[type]} this *SearchController) send(day string, c chan string [description]
  * @return {[type]}      [description]
  */
-func (this *Proxy) send(day string, c chan string) {
+func (p *Proxy) send(day string, c chan string) {
 	defer func() {
 		if err := recover(); err != nil {
 			c <- "request timeout"
 		}
 	}()
-	b, _ := this.GetPostBody(day)
+	b, _ := p.GetPostBody(day)
 	body := bytes.NewBuffer(b)
-	req, err := http.NewRequest("POST", this.poseidon_search_url, body)
-	log.Println("send url ", this.poseidon_search_url)
+	req, err := http.NewRequest("POST", p.poseidon_search_url, body)
+	log.Println("send url ", p.poseidon_search_url)
 	if err != nil {
 		panic(err)
 	}
@@ -143,7 +145,7 @@ func (this *Proxy) send(day string, c chan string) {
 	c <- string(re)
 }
 
-func (this *Proxy) getparams(r *http.Request) (*SearchRequestParams, error) {
+func (p *Proxy) getparams(r *http.Request) (*SearchRequestParams, error) {
 	jsonenc := json.NewDecoder(r.Body)
 	searchParams := make(map[string]interface{}, 1000)
 	err := jsonenc.Decode(&searchParams)
@@ -156,26 +158,26 @@ func (this *Proxy) getparams(r *http.Request) (*SearchRequestParams, error) {
 		return nil, ErrConvert
 	}
 
-	Sqp.Page_size = int32(query["page_size"].(float64))
-	Sqp.Page_number = int32(query["page_number"].(float64))
-	Sqp.Business = query["business"].(string)
-	Sqp.Keywords = query["keywords"].(map[string]interface{})
+	p.Sqp.Page_size = int32(query["page_size"].(float64))
+	p.Sqp.Page_number = int32(query["page_number"].(float64))
+	p.Sqp.Business = query["business"].(string)
+	p.Sqp.Keywords = query["keywords"].(map[string]interface{})
 
-	Sqp.Options = query["options"].(map[string]interface{})
+	p.Sqp.Options = query["options"].(map[string]interface{})
 	//Sqp.Filters = query["filters"].(map[string]interface{})
 
 	if query["day"] != nil {
-		Sqp.Day = query["day"].(string)
+		p.Sqp.Day = query["day"].(string)
 	}
 	if query["days"] != nil {
-		Sqp.Days = query["days"].([]interface{})
+		p.Sqp.Days = query["days"].([]interface{})
 	}
 
-	return Sqp, nil
+	return p.Sqp, nil
 }
 
-func (this *Proxy) GetDays(r *http.Request) ([]string, error) {
-	params, err := this.getparams(r)
+func (p *Proxy) GetDays(r *http.Request) ([]string, error) {
+	params, err := p.getparams(r)
 	if err != nil {
 		return nil, err
 	}
@@ -191,12 +193,12 @@ func (this *Proxy) GetDays(r *http.Request) ([]string, error) {
 	return days, nil
 }
 
-func (this *Proxy) GetPostBody(day string) ([]byte, error) {
+func (p *Proxy) GetPostBody(day string) ([]byte, error) {
 	mu.Lock()
 	defer mu.Unlock()
-	Sqp.Day = day
+	p.Sqp.Day = day
 	query := NewQuery()
-	query.Query = Sqp
+	query.Query = p.Sqp
 	body, err := json.Marshal(query)
 	if err != nil {
 		return nil, err
