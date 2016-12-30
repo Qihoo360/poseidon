@@ -30,7 +30,7 @@
 ## map combine阶段
 *   将相同分词的docid在本地进行差分合并列表
 *   输出：
-        *TokenHashId* *Token* *Filed*  *DocList* *PV*
+        *TokenHashId* *Token* *Field*  *DocList* *PV*
 字段间'\t'分隔
 *   docid采用差分压缩,  
         
