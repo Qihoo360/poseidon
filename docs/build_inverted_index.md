@@ -2,7 +2,7 @@
 
 
 ## map阶段
-*   针对每一行日志进行分词处理，按 *field* 对应的分词规则，产生 *Token* 相关的数据
+*   针对每一行日志进行分词处理，按 *Field* 对应的分词规则，产生 *Token* 相关的数据
     
 *   map输出，字段间'\t'分隔：
         *TokenHashid* *Token* *FileId* *Docid* *Offsize* *PV*  
@@ -22,13 +22,10 @@
         
     这是因为hadoop的MR中间排序算法默认是按照字典序排序的，HashId的排序却需要按照数字大小排序
     
-*   *FileId*  ： *InvertedIndexGzHDFSFile* 的Id;
-    *FileId* 也是 *InvertedIndexGzHDFSFile* 名字的一部分，查找token的IndexMeata数据时能推导出 *InvertedIndexGzHDFSFile* 具体路径；
-    *InvertedIndexGzHDFSFile* 具体见下文。
+*   *Field*  ： 字段类型,不是FileId
+    
+*   *Offsize* ： 分词所在的日志行在doc中的偏移量
     
-    *TokenId* 与 *FileId* 关系如下：
-        
-        FileId = TokenId / 1000
 
 ## map combine阶段
 *   将相同分词的docid在本地进行差分合并列表
@@ -76,7 +73,12 @@
     每一个 *InvertedIndexGz* 对应 *Meta* 信息包含： TokenId、FileId、Offset、Length。该文件每行就存储了一个 *InvertedIndexGz* 对应的元数据信息，4列存储，以 *\t* 分割，分别如下：
         
         TokenId FileId  Offset  Length
+       
+   *FileId*  ： *InvertedIndexGzHDFSFile* 的Id；*FileId* 也是 *InvertedIndexGzHDFSFile* 名字的一部分，查找token的IndexMeata数据时能推导出 *InvertedIndexGzHDFSFile* 具体路径； 
+   *TokenId* 与 *FileId* 关系如下：
         
+        FileId = TokenId / 1000
+       
     举例如下
     /the/path/to/data/business/index/2016-08-24/m5gzmeta/part-00977.gz   
         
@@ -90,7 +92,7 @@
         00051895       	00977  	972    	80
   
     *InvertedIndexGzMeta* 数据最终会存放到NoSQL中，
-    写一个MR程序直接读取 *InvertedIndexGzMetaHDFSFile* 就可以写入到NoSQL了
-    表空间可以命名为：/业务名/索引名，例如： /test/text
-    key是 TokenId；
+    写一个MR程序直接读取 *InvertedIndexGzMetaHDFSFile* 就可以写入到NoSQL了；  
+    表空间可以命名为：/业务名/索引名，例如： /test/text  
+    key是 TokenId；  
     value是 *InvertedIndexGz* 的 *Meta* 信息。其中只要 offset、length 这两个字段即可，hdfs_path、FileId这两个字段可以根据规则推算出来。
