@@ -13,10 +13,10 @@ mkdir proxy
 
 go build -o bin/$APP
 
-cp -r bin/ proxy/
-cp -r conf/ proxy/
-cp serverctl proxy/
-cp -r logs proxy/
+rsync -r bin proxy/
+rsync -r conf proxy/
+rsync serverctl proxy/
+rsync -r logs proxy/
 
 tar -zcvf $ROOT_DIR/../../dist/$APP-$VER.tar.gz proxy/
 

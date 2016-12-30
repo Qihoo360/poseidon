@@ -13,10 +13,10 @@ mkdir meta
 
 go build -o bin/$APP
 
-cp -r bin/ meta/
-cp -r conf/ meta/
-cp serverctl meta/
-cp -r logs meta/
+rsync -r bin meta/
+rsync -r conf meta/
+rsync serverctl meta/
+rsync -r logs meta/
 
 tar -zcvf $ROOT_DIR/../../dist/$APP-$VER.tar.gz meta/
 

@@ -13,10 +13,10 @@ mkdir -p bin logs
 go build -o bin/$APP
 
 mkdir searcher
-cp -r bin/ searcher/
-cp -r conf/ searcher/
-cp serverctl searcher/
-cp -r logs searcher/
+rsync -r bin searcher/
+rsync -r conf searcher/
+rsync serverctl searcher/
+rsync -r logs searcher/
 
 tar -zcvf $ROOT_DIR/../../dist/$APP-$VER.tar.gz searcher/
 
