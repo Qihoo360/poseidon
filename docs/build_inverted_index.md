@@ -5,7 +5,7 @@
 *   针对每一行日志进行分词处理，按 *Field* 对应的分词规则，产生 *Token* 相关的数据
     
 *   map输出，字段间'\t'分隔：
-        *TokenHashid* *Token* *FileId* *Docid* *Offsize* *PV*  
+        *TokenHashid* *Token* *Field* *Docid* *Offsize* *PV*  
         
 *   *HashId* : token的hash值;Hash算法推荐使用 [murmur3算法](https://en.wikipedia.org/wiki/MurmurHash)  
         
@@ -30,7 +30,7 @@
 ## map combine阶段
 *   将相同分词的docid在本地进行差分合并列表
 *   输出：
-        *TokenHashId* *Token* *FileId*  *DocList* *PV*
+        *TokenHashId* *Token* *Field*  *DocList* *PV*
 字段间'\t'分隔
 *   docid采用差分压缩,  
         
