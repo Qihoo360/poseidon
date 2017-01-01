@@ -5,7 +5,7 @@ if [ ! -f build.sh ]; then
 fi
 
 ROOT_DIR=`pwd`
-APP="proxy"
+APP="poseidon_proxy"
 VER="0.1"
 
 mkdir -p bin logs
