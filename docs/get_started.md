@@ -16,7 +16,7 @@ CentOS release 6.2 (Final)
 -  [Gradle]:    
 下载gradle的二进制包，解压到某个目录中，建议是$HOME，将gradle的bin目录设置到$PATH中：
     vi ~/.bashrc 或者~/.bash_profile：
-    
+    /Users/liwei/Developer/src/github.com/qihoo360/poseidon/docs/get_started.md
         GOPATH=$HOME
         export $GOPATH
         GRADLE_HOME=/home/xxxxx/gradle-3.1
