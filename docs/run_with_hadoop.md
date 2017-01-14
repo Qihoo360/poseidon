@@ -8,6 +8,34 @@
       docker pull sequenceiq/hadoop-docker:2.7.1
       docker run -it sequenceiq/hadoop-docker:2.7.1 /etc/bootstrap.sh -bash
       
+### [开发环境依赖](get_started.md)      
+
+## 编译&打包
+### 下载代码：
+1. 进入您的工作目录(建议以`$HOME`目录作为您的工作目录)，将当前这个目录添加到`$GOPATH`环境变量中，然后执行如下命令:    
+     
+        mkdir -p src/github.com/Qihoo360
+        cd src/github.com/Qihoo360
+        git clone https://github.com/Qihoo360/poseidon
+        cd poseidon     
+    
+    
+2. 执行以下命令，产生可运行的包输出到 `dist` 目录
+> 编译之前，请指定所依赖的hadoop库版本号：
+> 修改builder/index/build.gradle中的`hadoopVersion`,以实际的hadoop系统为准；本例中为"2.7.1"；
+
+    sh ./build.sh
+
+### dist：
+
+    index-0.1.tar
+    proxy-0.1.tar.gz
+    searcher-0.1.tar.gz
+    idgenerator-0.1.tar.gz
+    meta-0.1.tar.gz
+    docformat-0.1.tar.gz
+    hdfsReader-0.1.tar
+
 
 ## 部署
 
