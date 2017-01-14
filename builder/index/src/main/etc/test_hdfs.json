@@ -1,0 +1,47 @@
+{
+  "common": {
+    "bussiness": "test",
+    "name_node": "localhost:9000",
+    "hadoop_user": "root",
+    "hdpfs_index_base_path": "/home/poseidon/src",
+    "data_hashid_section": 10000000000,
+    "line_per_doc": 128,
+    "indexgzmeta_section": 200,
+    "indexgz_file_num_per_field": 1000,
+    "meta_service": "127.0.0.1:39610",
+    "local_mock": false
+  },
+  "inverted_index": {
+    "save_line_count_per_map": 100000,
+    "line_average_length": 850,
+    "data_format": "TAB",
+    "daily_index": false,
+    "daily_data_size": "10TB",
+    "log_dir_level": 1,
+    "hdfs_path": "/home/poseidon/src/test",
+    "hdfs_cluster": "idc-name",
+    "hdfs_path_date_pattern": "YYYY-MM-DD",
+    "hdfs_file_pattern": "gz",
+    "cache_size": 16777216,
+    "debug": 0,
+    "is_total": true,
+    "etcs": "IKAnalyzer.cfg.xml",
+    "libs": "indexmeta-0.1.jar,json.jar,ikanalyzer2012ff.jar,protobuf-java-3.1.0.jar",
+    "field_names": [
+      "text"
+    ],
+    "tokenizer": {
+      "text": [
+        {
+          "split": "\\|\\|"
+        },
+        "text",
+        "urlencode",
+        "keyword"
+      ]
+    },
+    "alias": {
+      "text": "text"
+    }
+  }
+}
