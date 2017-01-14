@@ -157,6 +157,8 @@ options : 其他参数，pv_only是否只查询pv，filter过滤字段
 keywords : 要查询的关键词，json键值对格式,当传多个key时是and关系查询,查询汉字需要`urlencode并转小写`
 ```
 
+## [如何在hadoop系统上运行索引任务](docs/get_started.md)
+
 [Java jdk]:http://www.oracle.com/technetwork/java/javase/downloads/index.html
 [Golang]:https://golang.org/dl/
 [Protobuf]:https://developers.google.com/protocol-buffers/docs/downloads
