@@ -8,7 +8,8 @@
       docker pull sequenceiq/hadoop-docker:2.7.1
       docker run -it sequenceiq/hadoop-docker:2.7.1 /etc/bootstrap.sh -bash
       
- ## 部署
+
+## 部署
 
 ### 下面部署示例，以业务名为`test`为例
 > 为避免出错，请严格按照以下步骤顺序执行
@@ -79,7 +80,10 @@ sh bin/hdfsReader.sh start
     tar -xvf index-0.1.tar
     cd index-0.1
     
-> 指定hadoop系统的namenode：修改etc/test_hdfs.json中的`name_node`，值为"host:port":
+> 指定hadoop系统的namenode： 
+> 修改etc/test_hdfs.json中的`name_node`，值格式为"host:port"，修改为实际的namenode地址； 
+> 本例中为127.0.0.1:9000；  
+    
     
     /bin/bash bin/start.sh  YYYY-MM-DD  //注意：不是mock_start.sh
     
