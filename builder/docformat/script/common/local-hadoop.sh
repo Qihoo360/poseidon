@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 # exec 1>>logs/local-hadoop.log 2>&1
 echo "$(date "+%Y/%m/%d %H:%M:%S") this a local hadoop client for demo"
 echo "params is: $*"
