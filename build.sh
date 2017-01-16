@@ -5,6 +5,7 @@ if [ ! -f build.sh ]; then
     exit 1
 fi
 
+
 mkdir -p dist
 
 cd builder
