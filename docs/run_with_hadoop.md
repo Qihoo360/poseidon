@@ -24,6 +24,12 @@
 > 编译之前，请指定所依赖的hadoop库版本号：
 > 修改builder/index/build.gradle中的`hadoopVersion`,以实际的hadoop系统为准；本例中为"2.7.1"；
 
+> 修改service/hdfsreader/build.gradle中hadoop相关的version；本例中为"2.7.1"；
+> 修改service/hdfsreader/src/main/etc/core-site.xml中的fs.defaultFS的value，将默认的`file:/`修改为正确的hdfs配置，hadoop默认应该修改为`hdfs://localhost:9000`
+
+> 修改builder/docformat/etc/docformat/docformat.json中的hadoop_cmd，将默认的`./bin/local-hadoop.sh`修改为`./bin/real-hadoop.sh`
+> 修改builder/docformat/script/common/real-hadoop.sh中的hadoop命令为正确路径，本例中是`/usr/local/hadoop/bin/hadoop`
+
     sh ./build.sh
 
 ### dist：
@@ -95,7 +101,7 @@ sh bin/hdfsReader.sh start
 
 
 #### 4.2 等待docformat日志完成
-> 注意，执行 `sh bin/demo.sh FILE` 之后，需要查看/home/poseidon/src/test/YYYY-MM-DD/中是否有新的文件生成；//TODO  
+> 注意，执行 `sh bin/demo.sh FILE` 之后，需要查看hdfs:/home/poseidon/src/test/YYYY-MM-DD/中是否有新的文件生成；//TODO  
 > YYYY-MM-DD ： 开始索引任务的日期，比如2016-10-10；YYYY-MM-DD从`demo.sh`运行输出中获取；
 >若没有文件生成，需要等待直到文件生成；
 
