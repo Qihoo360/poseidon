@@ -17,6 +17,7 @@ repositories {
 
 def var = dependencies {
     compile group: 'org.apache.hadoop', name: 'hadoop-common', version: '2.7.1'
+    compile group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '2.7.1'
 }
 var
 

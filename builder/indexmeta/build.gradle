@@ -11,9 +11,11 @@ repositories {
 
 def var
 var = dependencies {
-    compile group: 'org.apache.hadoop', name: 'hadoop-common', version: '2.7.1'
-    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-core', version: '2.7.1'
-    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-common', version: '2.7.1'
+    compile group: 'org.apache.hadoop', name: 'hadoop-common', version: hadoopVersion
+    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-core', version: hadoopVersion
+    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-common', version: hadoopVersion
+    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-jobclient', version: hadoopVersion
+    compile group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '2.7.1'
 
     compile group: 'commons-configuration', name: 'commons-configuration', version: '1.9'
     compile group: 'org.apache.commons', name: 'commons-compress', version: '1.4.1'

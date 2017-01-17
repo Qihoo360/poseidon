@@ -57,12 +57,12 @@ public abstract class MetaConfigured extends Configured implements Tool {
         InitJsonParams(index_config, conf);
         System.err.println("index_config: " + index_config);
         String mock = conf.get("local_mock", "false");
-        String fs_default_name;
+        String fs_default_name="";
         if (mock == "true") {
             fs_default_name = System.getProperty("user.dir");
         } else {
             String name_node = conf.get("name_node");
-            fs_default_name = "hdfs://" + name_node + "/";
+            //fs_default_name = "hdfs://" + name_node + "/";
         }
 
         Job job = GetMapReduceJob(conf);
@@ -94,10 +94,12 @@ public abstract class MetaConfigured extends Configured implements Tool {
         String[] paths = arg0[0].split(",");
         for (int i = 0; i < paths.length; i++) {
             if (paths[i].isEmpty()) continue;
-            FileInputFormat.addInputPath(job, new Path(paths[i]));
+            String hdfsFile = fs_default_name + paths[i];
+            System.err.println("add input:" + hdfsFile);
+            FileInputFormat.addInputPath(job, new Path(hdfsFile));
         }
 
-        FileOutputFormat.setOutputPath(job, new Path(arg0[1]));
+        FileOutputFormat.setOutputPath(job, new Path(fs_default_name + arg0[1]));
         job.waitForCompletion(true);
         return 0;
     }
@@ -137,7 +139,7 @@ public abstract class MetaConfigured extends Configured implements Tool {
                 conf.set("mapred.job.tracker", "local");
                 conf.set("local_mock", "true");
             } else {
-                conf.set("fs.default.name", "hdfs:///");
+                //conf.set("fs.default.name", "hdfs:///");
             }
 
             conf.set("log_name", bussiness.intern());

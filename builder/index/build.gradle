@@ -8,22 +8,26 @@ apply plugin: 'application'
 sourceCompatibility = 1.7
 mainClassName="InvertedIndex.InvertedIndexGenerate"
 
+ext {
+    hadoopVersion = "2.7.1"
+}
+
 repositories {
     mavenLocal()
     mavenCentral()
     jcenter()
 
    // maven{ url 'http://maven.oschina.net/content/groups/public/'}
-    maven{ url 'http://repo1.maven.org/maven2'}
+    maven{ url 'http://repo1.maven.org/maven2' }
 }
 
 def var = dependencies {
-    compile group: 'org.apache.hadoop', name: 'hadoop-common', version: '2.7.1'
-    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-core', version: '2.7.1'
-    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-common', version: '2.7.1'
-    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-jobclient', version: '2.7.1'
+    compile group: 'org.apache.hadoop', name: 'hadoop-common', version: hadoopVersion
+    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-core', version: hadoopVersion
+    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-common', version: hadoopVersion
+    compile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-jobclient', version: hadoopVersion
 
-    compile group: 'org.apache.hadoop', name: 'hadoop-yarn-api', version: '2.7.1'
+    //compile group: 'org.apache.hadoop', name: 'hadoop-yarn-api', version: '2.7.1'
     compile group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '2.7.1'
     compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.1.0'
 
@@ -31,9 +35,7 @@ def var = dependencies {
     compile group: 'commons-configuration', name: 'commons-configuration', version: '1.9'
     compile group: 'org.apache.commons', name: 'commons-compress', version: '1.4.1'
 
-    //compile fileTree(dir: 'libs', include: 'hadoop-0.20.2.1U11-core.jar')
     compile fileTree(dir: 'libs', include: 'json.jar')
-    //compile fileTree(dir: 'libs', include: 'protobuf-java-3.0.0-beta-2.jar')
     compile fileTree(dir: 'libs', include: 'ikanalyzer2012ff.jar')
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
@@ -68,6 +70,7 @@ task createEtc  {
         etc.mkdirs()
         copyFile('src/main/etc/IKAnalyzer.cfg.xml', "$buildDir/etc/IKAnalyzer.cfg.xml")
         copyFile('src/main/etc/test.json', "$buildDir/etc/test.json")
+        copyFile('src/main/etc/test_hdfs.json', "$buildDir/etc/test_hdfs.json")
 
     }
 }
