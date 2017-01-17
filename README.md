@@ -70,4 +70,6 @@ Poseidon 系统就是为了解决这个需求，能在几秒钟内从数百万�
 * [proxy](docs/proxy.md) ：searcher的一个代理，并能实现跨时间的查询服务
 * allinone ： 为简化部署，将 idgenerator/meta/searcher/proxy 四个微服务集成在一个进程中，提供统一的服务接口
 
+### 其他
 
+* qq交流群：21557451
