@@ -160,6 +160,7 @@ func (self *InvertedIndexGzClient) FetchIndex(day string, business string, keywo
 	for filed, token := range keywords {
 		sk := BusinessTraitInstance(business).IndexStoredKey(day, filed, token)
 		dockeys[sk] = ""
+		log.Println("Add dockey ", sk)
 	}
 	result, err = SymcGet(BusinessTraitInstance(business).IndexStoredAddr(), dockeys)
 	if err != nil {
