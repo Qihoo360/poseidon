@@ -122,16 +122,19 @@ func (p *Proxy) send(day string, c chan string) {
 	b, _ := p.GetPostBody(day)
 	body := bytes.NewBuffer(b)
 	req, err := http.NewRequest("POST", p.poseidon_search_url, body)
-	log.Println("send url ", p.poseidon_search_url)
+	log.Println("send url ", p.poseidon_search_url, body)
 	if err != nil {
+		log.Printf("send url %s httpNewErr=%v", p.poseidon_search_url, err)
 		panic(err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	//req.Header.Add("Accept-Encoding", "identity")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	if err != nil {
+	if err != nil  {
+		log.Printf("send url %s doClientErr=%v", p.poseidon_search_url, err)
 		panic(err)
 	}
 
@@ -139,6 +142,7 @@ func (p *Proxy) send(day string, c chan string) {
 
 	re, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		log.Printf("send url %s readAllErr=%v", p.poseidon_search_url, err)
 		panic(err)
 	}
 

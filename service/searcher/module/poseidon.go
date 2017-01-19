@@ -202,6 +202,7 @@ func DoSearch(req *SearchRequest) (total, pv, uv int, result []*poseidon.DocData
 			}
 		}
 
+
 		if len(req.filter) > 0 && len(docDataList) > 0 {
 			if err == nil {
 				log.Printf("cloudRuleFilter ok, input=%d output=%d", len(docDataList), len(docDataList))
@@ -249,6 +250,7 @@ func (s *Searcher) handleSearch(w http.ResponseWriter, r *http.Request) {
 			"hits": [`,
 		day, searchReq.cond.KeywordsJson(), total, pv, uv, searchReq.pageNumber, searchReq.pageSize)
 
+
 	io.WriteString(w, respBody)
 
 	for i, item := range searchResult {
@@ -264,6 +266,9 @@ func (s *Searcher) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	io.WriteString(w, "]}}\r\n\r\n")
+
+	//log.Printf("Response Done %s", respBody)
+
 }
 
 /**
