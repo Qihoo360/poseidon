@@ -76,7 +76,7 @@ public class InvertedIndexGenerate extends Configured implements Tool {
             //fs_default_name = System.getProperty("user.dir");
         } else {
             String name_node = conf.get("name_node");
-            fs_default_name = "hdfs://" + name_node;
+            //fs_default_name = "hdfs://" + name_node;
         }
         String bussiness = conf.get("log_name");
         String hdpfs_index_base_path = conf.get("hdpfs_index_base_path");
@@ -179,7 +179,7 @@ public class InvertedIndexGenerate extends Configured implements Tool {
                 //conf.set("mapreduce.framework.name", "local");
                 conf.set("local_mock", "true");
             } else {
-                conf.set("fs.default.name", "hdfs:///");
+                //conf.set("fs.default.name", "hdfs:///");
             }
 
             conf.set("log_name", bussiness.intern());

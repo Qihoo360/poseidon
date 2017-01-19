@@ -46,8 +46,8 @@ Poseidon 系统就是为了解决这个需求，能在几秒钟内从数百万�
     * [构建倒排索引时所需的配置文件模板的说明](docs/config.md)
     * [快速开始](docs/get_started.md)
 * 微服务
-    * [HDFS数据读取微服务 hdfs_reader](docs/hdfs_reader.md)
-    * [ID生成中心微服务 id_generator](docs/id_generator.md)
+    * [HDFS数据读取微服务 hdfsreader](docs/hdfs_reader.md)
+    * [ID生成中心微服务 idgenerator](docs/id_generator.md)
     * [元数据存取微服务 meta](docs/meta.md)
     * [核心搜索引擎服务 searcher](docs/searcher.md)
     * [搜索引擎代理服务 proxy](docs/proxy.md)
@@ -70,4 +70,6 @@ Poseidon 系统就是为了解决这个需求，能在几秒钟内从数百万�
 * [proxy](docs/proxy.md) ：searcher的一个代理，并能实现跨时间的查询服务
 * allinone ： 为简化部署，将 idgenerator/meta/searcher/proxy 四个微服务集成在一个进程中，提供统一的服务接口
 
+### 其他
 
+* qq交流群：21557451

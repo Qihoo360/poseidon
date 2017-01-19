@@ -5,7 +5,7 @@ if [ ! -f build.sh ]; then
 fi
 
 ROOT_DIR=`pwd`
-APP="searcher"
+APP="poseidon_searcher"
 VER="0.1"
 
 mkdir -p bin logs
