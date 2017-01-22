@@ -16,7 +16,7 @@ CentOS release 6.2 (Final)
 -  [Gradle]:    
 下载gradle的二进制包，解压到某个目录中，建议是$HOME，将gradle的bin目录设置到$PATH中：
     vi ~/.bashrc 或者~/.bash_profile：
-    
+    /Users/liwei/Developer/src/github.com/qihoo360/poseidon/docs/get_started.md
         GOPATH=$HOME
         export $GOPATH
         GRADLE_HOME=/home/xxxxx/gradle-3.1
@@ -156,6 +156,8 @@ business : 业务名称，默认test
 options : 其他参数，pv_only是否只查询pv，filter过滤字段
 keywords : 要查询的关键词，json键值对格式,当传多个key时是and关系查询,查询汉字需要`urlencode并转小写`
 ```
+
+## [如何在hadoop系统上运行索引任务](run_with_hadoop.md)
 
 [Java jdk]:http://www.oracle.com/technetwork/java/javase/downloads/index.html
 [Golang]:https://golang.org/dl/

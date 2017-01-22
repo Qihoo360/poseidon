@@ -11,14 +11,14 @@
         
         HashId = murmur3_hash64(Token)
         
-*   *TokenId* ：Token的Id，先算出HashId，然后模200取余数；  同一个TokenId，可能会对应多个Token；
+*   *TokenId* ：Token的Id，先算出HashId，然后除200取商；  同一个TokenId，可能会对应多个Token；
     注意TokenId要使用8字节0补充对齐格式输出，例如 HashId=123 那么输出TokenId应该为 00000123  
         
-        TokenId = HashId % 200
+        TokenId = String.format("%08d",HashId / 200）
         
     输出TokenId的C++代码为： 
         
-        std::cout << std::setfill ('0') << std::setw (8) << TokenId; 
+        std::cout << std::setfill ('0') << std::setw (8) << HashId / 200; 
         
     这是因为hadoop的MR中间排序算法默认是按照字典序排序的，HashId的排序却需要按照数字大小排序
     
@@ -77,7 +77,14 @@
    *FileId*  ： *InvertedIndexGzHDFSFile* 的Id；*FileId* 也是 *InvertedIndexGzHDFSFile* 名字的一部分，查找token的IndexMeata数据时能推导出 *InvertedIndexGzHDFSFile* 具体路径； 
    *TokenId* 与 *FileId* 关系如下：
         
-        FileId = TokenId / 1000
+        FileId = hashBytes（TokenId） % 1000
+        
+        public static int hashBytes(byte[] bytes, int offset, int length) {
+           int hash = 1;
+           for (int i = offset; i < offset + length; i++)
+              hash = (31 * hash) + (int)bytes[i];
+           return hash;
+        }  
        
     举例如下
     /the/path/to/data/business/index/2016-08-24/m5gzmeta/part-00977.gz   
