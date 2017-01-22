@@ -118,7 +118,7 @@ sh bin/hdfsReader.sh start
 > YYYY-MM-DD ： 开始索引任务的日期，比如2016-10-10；YYYY-MM-DD从`demo.sh`运行输出中获取；
 >若没有文件生成，需要等待直到文件生成；
 
-    ls -ahtl /home/poseidon/src//test/YYYY-MM-DD/
+    ls -ahtl /home/poseidon/src/test/YYYY-MM-DD/
     
  
 #### 4.3 docmeta,index,indexmeta :部署和构建一个索引文件demo:
