@@ -1,12 +1,15 @@
 group 'indexmeta'
 version '0.1'
-
 apply plugin: 'java'
 
 sourceCompatibility = 1.7
 
 repositories {
     mavenCentral()
+}
+
+ext {
+    hadoopVersion = "2.7.1"
 }
 
 def var

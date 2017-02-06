@@ -45,6 +45,17 @@ public class InvertedIndexGenerateReducer extends Reducer<Text, Text, Text, Byte
         System.err.println("InvertedIndexGenerateReducer-Encoding: " + Charset.defaultCharset().displayName());
     }
 
+    private static class LongVal {
+        public long v;
+        public LongVal(long v) {
+            this.v = v;
+        }
+
+        public void increment(long incre) {
+            this.v += incre;
+        }
+    }
+
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
 
@@ -83,6 +94,101 @@ public class InvertedIndexGenerateReducer extends Reducer<Text, Text, Text, Byte
      * */
     @Override
     protected void reduce(Text key, Iterable<Text> values_ori, Reducer<Text, Text, Text, BytesWritable>.Context context)
+                throws IOException, InterruptedException {
+        String suffix = context.getTaskAttemptID().getTaskID().toString();
+        suffix = suffix.substring(suffix.length() - 5, suffix.length());
+
+        String taskKey = key.toString();
+
+        /*
+         * 第一版的group是按"field_word"，输出的gzmeta中可能会有重复
+		 * 需要有两个group：
+		 *  group1：大group，用field，输出index,gzmeta
+		 *  group2：小group，用field_word，输出middle
+		 * */
+
+        HashMap<String, LongVal> fieldSize = new HashMap<String, LongVal>();
+
+        Map<String, ReduceGroupData.Result> resultMap = new HashMap<String, ReduceGroupData.Result>();
+
+        for (Text value : values_ori) {
+            String[] curTokens = value.toString().split("\t");
+            if (curTokens.length != 4) {
+                continue;
+            }
+
+            long curLen = (long) curTokens[2].length();
+            String curWord = curTokens[0];
+            String curField = curTokens[1];
+            LongVal lv = fieldSize.get(curField);
+            if (lv == null) {
+                lv = new LongVal(curLen);
+                fieldSize.put(curField, lv);
+            } else {
+                lv.increment(curLen);
+            }
+
+            // TODO 先不考虑 lv.v
+            ReduceGroupData.Result curResult = resultMap.get(curField);
+            if(curResult == null) {
+                curResult = new ReduceGroupData.Result();
+                resultMap.put(curField, curResult);
+            }
+
+            ReduceGroupData.MetaData curMd = curResult.data_.get(curWord);
+            if(curMd == null) {
+                curMd = new ReduceGroupData.MetaData();
+                curResult.data_.put(curWord, curMd);
+            }
+
+            curMd.pv_ += curLen;
+            String curDocIds = curTokens[2];
+            if (!ReduceGroupData.isInvalidData(curMd.pv_, curLen, curMd.docid_list_build_)) {
+                ReduceGroupData.addDocidList(curDocIds, curMd.docid_list_build_);
+            }
+        }
+
+        // 最后输出
+        int count = 0;
+        for(Map.Entry<String, ReduceGroupData.Result> entry : resultMap.entrySet()) {
+            String curField = entry.getKey();
+            InvertedIndex.Builder curIIB = InvertedIndex.newBuilder();
+            for(Map.Entry<String, ReduceGroupData.MetaData> metaEntry : entry.getValue().data_.entrySet()) {
+                if ((count++ % 10) == 0) {
+                    context.progress();
+                }
+
+                String curWord = metaEntry.getKey();
+                ReduceGroupData.MetaData curMd = metaEntry.getValue();
+
+                StringBuffer curBuf = new StringBuffer();
+                curBuf.append(curWord).append("\t").append(curField);
+
+                DocIdList curDocIdList = SortDocIdList(curMd.docid_list_build_, curMd.pv_);
+                GetDocIdListStr(curDocIdList, curBuf);
+                curBuf.append("\t").append(curMd.pv_).append("\n");
+                // save middle
+                context.write(MIDDLE, new BytesWritable(curBuf.toString().getBytes()));
+
+                curIIB.getMutableIndex().put(curWord, curDocIdList);
+            }
+            output(taskKey, context, curField, suffix, curIIB);
+        }
+
+    }
+
+    /*
+     * 优化：
+     * 将values按key分组，每次只处理一组数据，输出
+     *   内存使用上将是：小 -> 大 -> 小
+     *
+     *   优化大的这部分:
+     *
+     *   1整个values是一个key，代码将和现在一样
+     *   2假设最差的可能性，单条数据会导致内存溢出
+     *   @deprecated 保留原来的实现方式
+     * */
+    protected void reduceOld(Text key, Iterable<Text> values_ori, Reducer<Text, Text, Text, BytesWritable>.Context context)
             throws IOException, InterruptedException {
 
         String suffix = context.getTaskAttemptID().getTaskID().toString();
@@ -106,7 +212,7 @@ public class InvertedIndexGenerateReducer extends Reducer<Text, Text, Text, Byte
             FieldSizeData fsd = field_size.get(0);
             field_size.remove(0);
 
-            if (fsd.size_ >= MaxDocidSpaceSize/*false*/) {
+            if (fsd.size_ >= MaxDocidSpaceSize) {
                 // 走磁盘缓存
                 System.err.println((new StringBuilder()).append("[DiskCache] size:")
                         .append(fsd.size_).append(", key:").append(key_str)

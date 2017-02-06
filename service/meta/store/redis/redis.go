@@ -144,7 +144,9 @@ func (rc *Redis) connectInit() {
 
 	// initialize a new pool
 	rc.p = &redis.Pool{
-		MaxIdle:     3,
+		MaxIdle:     10,
+		MaxActive: 100,
+		Wait: true,
 		IdleTimeout: rc.config.Timeout * 10,
 		Dial:        dialFunc,
 	}
