@@ -23,17 +23,18 @@ type BusinessTrait interface {
 	DocFilePath(day string, name string) string
 }
 
-var testTrait = TestTrait{name: "test"}
+//var testTrait = TestTrait{name: "test"}
 
 func BusinessTraitInstance(business string) BusinessTrait {
-
+	testTrait :=  TestTrait{name: business}
+	return &testTrait
 	//multi business
-	switch business {
+	/*switch business {
 	case "test":
 		return &testTrait
 	}
 
-	return &testTrait
+	return &testTrait*/
 }
 
 type TestTrait struct {
@@ -53,6 +54,7 @@ func (self *TestTrait) FieldShortName(field string) string {
 
 func (self *TestTrait) IndexStoredAddr() string {
 	indexStoredAddr, _ := SimgoFramework.Conf.SectionGet("searcher", "indexStored")
+	indexStoredAddr = strings.Replace(indexStoredAddr, "business", self.name, -1)
 	return indexStoredAddr
 }
 
@@ -69,12 +71,13 @@ func (self *TestTrait) IndexFilePath(day string, field string, token string) str
 	hashId := indexHashId(normalizedToken(field, token))
 	indexMetaKey := fmt.Sprintf("%08d", hashId/InvertedIndexGzCount)
 
-	return "/home/poseidon/src/test/index/" + day + "/" + field + "index/part-" +
+	return "/home/poseidon/src/" + self.name +"/index/" + day + "/" + field + "index/part-" +
 		MetaIdHdfsFilePart(indexMetaKey) + ".gz"
 }
 
 func (self *TestTrait) DocStoredAddr() string {
 	docidStoredAddr, _ := SimgoFramework.Conf.SectionGet("searcher", "docStored")
+	docidStoredAddr = strings.Replace(docidStoredAddr, "business", self.name, -1)
 	return docidStoredAddr
 }
 
@@ -91,7 +94,7 @@ func (self *TestTrait) DocFilePath(day string, name string) string {
 	hour := name[len(name)-4 : len(name)-2]
 	minute := name[len(name)-2:]
 
-	return "/home/poseidon/src/test/" + day + "/" +
+	return "/home/poseidon/src/" + self.name +"/" + day + "/" +
 		shortName + "_" + day + "-" + hour + "-" + minute + ".gz"
 }
 
