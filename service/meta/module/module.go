@@ -96,5 +96,6 @@ func (m *Meta) initBackendStore(section string) error {
 	businessName := nn[4]
 	name := getBackendStoreName(metaType, businessName)
 	m.backend[name] = backend
+	glog.Infof("initBackendStore %v with type %v", name, backend.storeType)
 	return nil
 }

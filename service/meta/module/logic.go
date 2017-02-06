@@ -21,7 +21,8 @@ func (m *Meta) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	metaType := vars["metaType"]
 	business := vars["business"]
-
+	//glog.Infof("Get metaType=%v business=%v key=%v", metaType, business,
+	//	getBackendStoreName(metaType, business));
 	var db store.Store
 	if v, ok := m.backend[getBackendStoreName(metaType, business)]; ok {
 		db = v.db

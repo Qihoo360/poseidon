@@ -80,7 +80,11 @@ func (rc *Redis) MultiGet(keys []string) map[string] /*the-key*/ store.GetResult
 		var r store.GetResult
 		if v, err := c.Receive(); err == nil {
 			r.Err = nil
-			r.Value = string(v.([]byte))
+			if v == nil {
+				//r.Value = nil
+			} else {
+				r.Value = string(v.([]byte))
+			}
 			rv[keys[i]] = r
 		} else {
 			if err != redis.ErrNil {
