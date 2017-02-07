@@ -168,11 +168,13 @@ func GetPreviousDay() string {
 	return fmt.Sprintf("%4d-%02d-%02d", day.Year(), day.Month(), day.Day())
 }
 
-func DoSearch(req *SearchRequest) (total, pv, uv int, result []*poseidon.DocDataResult, err error) {
+func DoSearch(req *SearchRequest) (total, pv, uv int, result []*poseidon.DocDataResult, err error,
+		idTime, docTime int64) {
+	t0 := time.Now().UnixNano()/1e6
 	total, pv, uv, pageDocItems, err := SearchDocItems(req) // 取docId列表
-
+	t1 := time.Now().UnixNano()/1e6
 	if err != nil {
-		return 0, 0, 0, nil, err
+		return 0, 0, 0, nil, err, t1 - t0, 0
 	}
 
 	docDataList := poseidon.DocDataResultList{}
@@ -192,7 +194,7 @@ func DoSearch(req *SearchRequest) (total, pv, uv int, result []*poseidon.DocData
 					docSlice = docDataList
 				} else {
 					log.Printf("cloudRuleFilter err %v", err)
-					return 0, 0, 0, nil, err
+					return 0, 0, 0, nil, err, t1 - t0, 0
 				}
 			}
 			docDataList = append(docDataList, docSlice...)
@@ -209,11 +211,12 @@ func DoSearch(req *SearchRequest) (total, pv, uv int, result []*poseidon.DocData
 				docDataList = docDataList
 			} else {
 				log.Printf("cloudRuleFilter err %v", err)
-				return 0, 0, 0, nil, err
+				return 0, 0, 0, nil, err, t1 - t0, 0
 			}
 		}
 	}
-	return total, pv, uv, docDataList, nil
+	t2 := time.Now().UnixNano()/1e6
+	return total, pv, uv, docDataList, nil, t1 - t0, t2 - t1
 }
 
 func (s *Searcher) handleSearch(w http.ResponseWriter, r *http.Request) {
@@ -230,7 +233,7 @@ func (s *Searcher) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	day := searchReq.cond.day
-	total, pv, uv, searchResult, err := DoSearch(searchReq)
+	total, pv, uv, searchResult, err, idTime, docTime := DoSearch(searchReq)
 
 	log.Printf("---- %s handleSearch %v, err=%v", r.RemoteAddr, searchReq, err)
 
@@ -241,6 +244,9 @@ func (s *Searcher) handleSearch(w http.ResponseWriter, r *http.Request) {
 		`{"code":0,"err":"OK",
 			"day":"%s",
 			"keywords":%s,
+			"idMs": %d,
+			"docMs": %d,
+			"totalMs": %d,
 			"hits":
 			{"total":%d,
 			"pv":%d,
@@ -248,7 +254,8 @@ func (s *Searcher) handleSearch(w http.ResponseWriter, r *http.Request) {
 			"page_number":%d,
 			"page_size":%d,
 			"hits": [`,
-		day, searchReq.cond.KeywordsJson(), total, pv, uv, searchReq.pageNumber, searchReq.pageSize)
+		day, searchReq.cond.KeywordsJson(), idTime, docTime, (idTime + docTime),
+			total, pv, uv, searchReq.pageNumber, searchReq.pageSize)
 
 
 	io.WriteString(w, respBody)
