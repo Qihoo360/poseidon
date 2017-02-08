@@ -56,6 +56,112 @@ public class InvertedIndexGenerateReducer extends Reducer<Text, Text, Text, Byte
         }
     }
 
+
+    private static final int MAX_DOC_IDS_NUM = 100 * 10000;
+
+    private static final int TMP_ID_OFFSET = 8;
+
+    public static class WordMemoryList {
+        public long pv;
+        /** id = docId << 8 + rowIndex*/
+        public long[] ids;
+
+        public int len;
+
+        public WordMemoryList(int defaultLen) {
+            ids = new long[defaultLen];
+            len = 0;
+            pv = 0;
+        }
+
+        public void addDocIds(String docIdsStr, int docNum) {
+            // pv 保持增长
+            pv += docNum;
+
+            // 计算新的插入数量，不超过 MAX_DOC_IDS_NUM
+            int minLen = docNum + len;
+            if(minLen > MAX_DOC_IDS_NUM) {
+                minLen = MAX_DOC_IDS_NUM;
+            }
+
+            // 数组不够，需要扩容
+            if(minLen > ids.length) {
+                int newLen = (ids.length * 3) / 2 + 1;
+                if(newLen > MAX_DOC_IDS_NUM) {
+                    newLen = MAX_DOC_IDS_NUM;
+                }
+
+                if(newLen < minLen) {
+                    newLen = minLen;
+                }
+
+                // 设置新数组
+                long[] newIds = new long[newLen];
+                System.arraycopy(ids, 0, newIds, 0, len);
+                ids = newIds;
+            }
+
+            // 实际插入的数量
+            int toInsertNum = minLen - len;
+            // 超过最大限制，不需要插入，忽略具体内容
+            if(toInsertNum <= 0) {
+                return;
+            }
+
+            // 抽取全部内容
+            String[] docIdTokens = docIdsStr.split(";");
+
+            long base = 0;
+            int insertedNum = 0;
+            for(String docIdStr : docIdTokens) {
+                String[] cols = docIdStr.split(",");
+                if (cols.length != 2)
+                    continue;
+                base += Long.parseLong(cols[0]);
+                int rowIndex = Integer.parseInt(cols[1]);
+                ids[len] = (base << TMP_ID_OFFSET) + rowIndex;
+                ++len;
+                ++insertedNum;
+                // 限制插入的最大数量
+                if(insertedNum >= toInsertNum) {
+                    break;
+                }
+            }
+        }
+
+        public void sort() {
+            Arrays.sort(ids, 0, len);
+        }
+
+        /**
+         * 处理后ids释放内存
+         * @return
+         */
+        public DocIdList getDocIdList() {
+            DocIdList.Builder ret = DocIdList.newBuilder();
+            int divide = (int)Math.pow(2, TMP_ID_OFFSET);
+            DocId.Builder docId = DocId.newBuilder();
+            docId.setDocId(0);
+            docId.setRowIndex((int)pv);
+            ret.addDocIds(docId.build());
+
+            long lastDocId = 0;
+            for(int i = 0; i < len; ++i) {
+                long did = ids[i];
+                int rowIndex = (int)(did % divide);
+                did = did >> TMP_ID_OFFSET;
+                docId = DocId.newBuilder();
+                docId.setDocId(did - lastDocId);
+                lastDocId = did;
+                docId.setRowIndex(rowIndex);
+                ret.addDocIds(docId.build());
+            }
+
+            ids = null;
+            return ret.build();
+        }
+    }
+
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
 
@@ -107,9 +213,7 @@ public class InvertedIndexGenerateReducer extends Reducer<Text, Text, Text, Byte
 		 *  group2：小group，用field_word，输出middle
 		 * */
 
-        HashMap<String, LongVal> fieldSize = new HashMap<String, LongVal>();
-
-        Map<String, ReduceGroupData.Result> resultMap = new HashMap<String, ReduceGroupData.Result>();
+        Map<String, Map<String, WordMemoryList>> resultMap = new HashMap<String, Map<String, WordMemoryList>>();
 
         for (Text value : values_ori) {
             String[] curTokens = value.toString().split("\t");
@@ -117,56 +221,45 @@ public class InvertedIndexGenerateReducer extends Reducer<Text, Text, Text, Byte
                 continue;
             }
 
-            long curLen = (long) curTokens[2].length();
+            int curDocNum = Integer.parseInt(curTokens[3]);
             String curWord = curTokens[0];
             String curField = curTokens[1];
-            LongVal lv = fieldSize.get(curField);
-            if (lv == null) {
-                lv = new LongVal(curLen);
-                fieldSize.put(curField, lv);
-            } else {
-                lv.increment(curLen);
-            }
 
-            // TODO 先不考虑 lv.v
-            ReduceGroupData.Result curResult = resultMap.get(curField);
+
+            Map<String, WordMemoryList> curResult = resultMap.get(curField);
             if(curResult == null) {
-                curResult = new ReduceGroupData.Result();
+                curResult = new HashMap<String, WordMemoryList>();
                 resultMap.put(curField, curResult);
             }
 
-            ReduceGroupData.MetaData curMd = curResult.data_.get(curWord);
+            WordMemoryList curMd = curResult.get(curWord);
             if(curMd == null) {
-                curMd = new ReduceGroupData.MetaData();
-                curResult.data_.put(curWord, curMd);
+                curMd = new WordMemoryList(curDocNum);
+                curResult.put(curWord, curMd);
             }
 
-            curMd.pv_ += curLen;
-            String curDocIds = curTokens[2];
-            if (!ReduceGroupData.isInvalidData(curMd.pv_, curLen, curMd.docid_list_build_)) {
-                ReduceGroupData.addDocidList(curDocIds, curMd.docid_list_build_);
-            }
+            curMd.addDocIds(curTokens[2], curDocNum);
         }
 
         // 最后输出
         int count = 0;
-        for(Map.Entry<String, ReduceGroupData.Result> entry : resultMap.entrySet()) {
+        for(Map.Entry<String, Map<String, WordMemoryList>> entry : resultMap.entrySet()) {
             String curField = entry.getKey();
             InvertedIndex.Builder curIIB = InvertedIndex.newBuilder();
-            for(Map.Entry<String, ReduceGroupData.MetaData> metaEntry : entry.getValue().data_.entrySet()) {
-                if ((count++ % 10) == 0) {
+            for(Map.Entry<String, WordMemoryList> metaEntry : entry.getValue().entrySet()) {
+                if ((count++ % 100) == 0) {
                     context.progress();
                 }
 
                 String curWord = metaEntry.getKey();
-                ReduceGroupData.MetaData curMd = metaEntry.getValue();
+                WordMemoryList curMd = metaEntry.getValue();
+                curMd.sort();
 
                 StringBuffer curBuf = new StringBuffer();
                 curBuf.append(curWord).append("\t").append(curField);
-
-                DocIdList curDocIdList = SortDocIdList(curMd.docid_list_build_, curMd.pv_);
+                DocIdList curDocIdList = curMd.getDocIdList();
                 GetDocIdListStr(curDocIdList, curBuf);
-                curBuf.append("\t").append(curMd.pv_).append("\n");
+                curBuf.append("\t").append(curMd.pv).append("\n");
                 // save middle
                 context.write(MIDDLE, new BytesWritable(curBuf.toString().getBytes()));
 
