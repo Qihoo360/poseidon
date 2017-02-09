@@ -12,6 +12,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
+import InvertedIndex.InvertedIndexGenerateReducer.WordMemoryList;
+import proto.PoseidonIf;
 
 public class InvertedIndexGenerateCombiner extends Reducer<Text, Text, Text, Text> {
 
@@ -39,6 +41,30 @@ public class InvertedIndexGenerateCombiner extends Reducer<Text, Text, Text, Tex
 
     @Override
     protected void reduce(Text key, Iterable<Text> values, Reducer<Text, Text, Text, Text>.Context context)
+            throws IOException, InterruptedException {
+        Map<String, Map<String, WordMemoryList>> resultMap =
+                InvertedIndexGenerateReducer.buildReduceResultMap(values);
+
+        // 最后输出
+        for(Map.Entry<String, Map<String, WordMemoryList>> entry : resultMap.entrySet()) {
+            String curField = entry.getKey();
+            for(Map.Entry<String, WordMemoryList> metaEntry : entry.getValue().entrySet()) {
+                String curWord = metaEntry.getKey();
+                WordMemoryList curMd = metaEntry.getValue();
+                curMd.sort();
+
+                StringBuffer curBuf = new StringBuffer();
+                curBuf.append(curWord).append("\t").append(curField);
+                PoseidonIf.DocIdList curDocIdList = curMd.getDocIdList(false);
+                InvertedIndexGenerateReducer.GetDocIdListStr(curDocIdList, curBuf);
+                curBuf.append("\t").append(curMd.pv).append("\n");
+                // save middle
+                context.write(key, new Text(curBuf.toString()));
+            }
+        }
+    }
+
+    protected void reduceOld(Text key, Iterable<Text> values, Reducer<Text, Text, Text, Text>.Context context)
             throws IOException, InterruptedException {
         Map<String, Vector> token_type_docids = new HashMap(); //token"\t"ttype key
         Map<String, Map> token_type_offsets = new HashMap(); //token"\t"ttype key

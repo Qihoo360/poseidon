@@ -137,13 +137,16 @@ public class InvertedIndexGenerateReducer extends Reducer<Text, Text, Text, Byte
          * 处理后ids释放内存
          * @return
          */
-        public DocIdList getDocIdList() {
+        public DocIdList getDocIdList(boolean includePv) {
             DocIdList.Builder ret = DocIdList.newBuilder();
             int divide = (int)Math.pow(2, TMP_ID_OFFSET);
-            DocId.Builder docId = DocId.newBuilder();
-            docId.setDocId(0);
-            docId.setRowIndex((int)pv);
-            ret.addDocIds(docId.build());
+            DocId.Builder docId = null;
+            if(includePv) {
+                docId = DocId.newBuilder();
+                docId.setDocId(0);
+                docId.setRowIndex((int) pv);
+                ret.addDocIds(docId.build());
+            }
 
             long lastDocId = 0;
             for(int i = 0; i < len; ++i) {
@@ -213,9 +216,42 @@ public class InvertedIndexGenerateReducer extends Reducer<Text, Text, Text, Byte
 		 *  group2：小group，用field_word，输出middle
 		 * */
 
+        Map<String, Map<String, WordMemoryList>> resultMap =
+                buildReduceResultMap(values_ori);
+
+        // 最后输出
+        int count = 0;
+        for(Map.Entry<String, Map<String, WordMemoryList>> entry : resultMap.entrySet()) {
+            String curField = entry.getKey();
+            InvertedIndex.Builder curIIB = InvertedIndex.newBuilder();
+            for(Map.Entry<String, WordMemoryList> metaEntry : entry.getValue().entrySet()) {
+                if ((count++ % 100) == 0) {
+                    context.progress();
+                }
+
+                String curWord = metaEntry.getKey();
+                WordMemoryList curMd = metaEntry.getValue();
+                curMd.sort();
+
+                StringBuffer curBuf = new StringBuffer();
+                curBuf.append(curWord).append("\t").append(curField);
+                DocIdList curDocIdList = curMd.getDocIdList(true);
+                GetDocIdListStr(curDocIdList, curBuf);
+                curBuf.append("\t").append(curMd.pv).append("\n");
+                // save middle
+                context.write(MIDDLE, new BytesWritable(curBuf.toString().getBytes()));
+
+                curIIB.getMutableIndex().put(curWord, curDocIdList);
+            }
+            output(taskKey, context, curField, suffix, curIIB);
+        }
+
+    }
+
+    public static Map<String, Map<String, WordMemoryList>> buildReduceResultMap(Iterable<Text> values) {
         Map<String, Map<String, WordMemoryList>> resultMap = new HashMap<String, Map<String, WordMemoryList>>();
 
-        for (Text value : values_ori) {
+        for (Text value : values) {
             String[] curTokens = value.toString().split("\t");
             if (curTokens.length != 4) {
                 continue;
@@ -240,34 +276,7 @@ public class InvertedIndexGenerateReducer extends Reducer<Text, Text, Text, Byte
 
             curMd.addDocIds(curTokens[2], curDocNum);
         }
-
-        // 最后输出
-        int count = 0;
-        for(Map.Entry<String, Map<String, WordMemoryList>> entry : resultMap.entrySet()) {
-            String curField = entry.getKey();
-            InvertedIndex.Builder curIIB = InvertedIndex.newBuilder();
-            for(Map.Entry<String, WordMemoryList> metaEntry : entry.getValue().entrySet()) {
-                if ((count++ % 100) == 0) {
-                    context.progress();
-                }
-
-                String curWord = metaEntry.getKey();
-                WordMemoryList curMd = metaEntry.getValue();
-                curMd.sort();
-
-                StringBuffer curBuf = new StringBuffer();
-                curBuf.append(curWord).append("\t").append(curField);
-                DocIdList curDocIdList = curMd.getDocIdList();
-                GetDocIdListStr(curDocIdList, curBuf);
-                curBuf.append("\t").append(curMd.pv).append("\n");
-                // save middle
-                context.write(MIDDLE, new BytesWritable(curBuf.toString().getBytes()));
-
-                curIIB.getMutableIndex().put(curWord, curDocIdList);
-            }
-            output(taskKey, context, curField, suffix, curIIB);
-        }
-
+        return resultMap;
     }
 
     /*
@@ -555,7 +564,7 @@ public class InvertedIndexGenerateReducer extends Reducer<Text, Text, Text, Byte
         return index_build;
     }
 
-    public void GetDocIdListStr(DocIdList build, StringBuffer ss) {
+    public static void GetDocIdListStr(DocIdList build, StringBuffer ss) {
 
         for (int i = 1; i < build.getDocIdsCount(); i++) {
             if (i == 1) {
