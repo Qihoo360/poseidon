@@ -20,7 +20,7 @@ public class DocMetaMapper extends Mapper<LongWritable, Text, Text, Text> {
     private String metaUrl_;
     private String logDay_;
     private String shortDay_;
-    private String lines_ = "";
+    private StringBuilder lines_ = new StringBuilder(1024);
     private int count_ = 0;
     private boolean firstkey_ = true;
     private String filename_;
@@ -32,7 +32,7 @@ public class DocMetaMapper extends Mapper<LongWritable, Text, Text, Text> {
         System.err.println(context.getInputSplit().toString());
         metaService_ = context.getConfiguration().get("meta_service");
         bussiness_ = context.getConfiguration().get("log_name");
-        metaUrl_ = new String("http://" + metaService_ + "/service/meta/" + bussiness_ + "/doc/set");
+        metaUrl_ = "http://" + metaService_ + "/service/meta/" + bussiness_ + "/doc/set";
         logDay_ = context.getConfiguration().get("log_day");
         shortDay_ = logDay_.replace("-", "").substring(2);
         FileSplit split = (FileSplit) context.getInputSplit();
@@ -67,8 +67,7 @@ public class DocMetaMapper extends Mapper<LongWritable, Text, Text, Text> {
         //System.err.println(gzmeta.toString());
 
         String line = shortDay_ + meta[0] + "\t" + meta[1];
-        lines_ += line;
-        lines_ += "\n";
+        lines_.append(line).append('\n');
         count_ += 1;
         if (count_ >= 50) {
             set();
@@ -77,12 +76,30 @@ public class DocMetaMapper extends Mapper<LongWritable, Text, Text, Text> {
     }
 
     private void set() {
-        MetaSetter metaSetter = new MetaSetter(metaUrl_);
-        String result = metaSetter.Post(lines_);
-        if (result == null || result.indexOf("OK") == -1) {
-            System.err.println("meta set error: " + lines_ + "  " + result);
+        if(lines_.length() <= 0) {
+            return;
         }
-        lines_ = "";
+        int maxRetryCnt = 8;
+        int retryCnt = 0;
+        String toPostStr = lines_.toString();
+        while (true) {
+            MetaSetter metaSetter = new MetaSetter(metaUrl_);
+            String result = metaSetter.Post(toPostStr);
+            if (result == null || !result.contains("OK")) {
+                System.err.println("#" + retryCnt +" meta set error: " + toPostStr + "  " + result);
+                ++retryCnt;
+                if(retryCnt >= maxRetryCnt) {
+                    System.err.println("Already try max times " + retryCnt + " for " + toPostStr);
+                    break;
+                }
+                try {
+                    Thread.sleep(1001);
+                } catch (InterruptedException e) {}
+            } else {
+                break;
+            }
+        }
+        lines_.delete(0, lines_.length());
         count_ = 0;
     }
 }
