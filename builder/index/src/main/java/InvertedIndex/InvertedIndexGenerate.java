@@ -179,7 +179,7 @@ public class InvertedIndexGenerate extends Configured implements Tool {
                 //conf.set("mapreduce.framework.name", "local");
                 conf.set("local_mock", "true");
             } else {
-                //conf.set("fs.default.name", "hdfs:///");
+                conf.set("fs.default.name", "hdfs://" + name_node);
             }
 
             conf.set("log_name", bussiness.intern());

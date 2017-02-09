@@ -43,7 +43,7 @@ public class MetaSetter {
         String retbody = null;
         try {
             HttpPost httpPost = new HttpPost(url_);
-            System.err.println("executing request " + httpPost.getURI());
+            //System.err.println("executing request " + httpPost.getURI());
             httpPost.setEntity(new StringEntity(body));
 
             HttpResponse response = httpclient.execute(httpPost);

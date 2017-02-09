@@ -12,6 +12,12 @@ ext {
     hadoopVersion = "2.7.1"
 }
 
+gradle.projectsEvaluated {
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+    }
+}
+
 def var
 var = dependencies {
     compile group: 'org.apache.hadoop', name: 'hadoop-common', version: hadoopVersion

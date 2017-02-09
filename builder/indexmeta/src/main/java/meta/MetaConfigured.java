@@ -128,6 +128,7 @@ public abstract class MetaConfigured extends Configured implements Tool {
 
             String hdpfs_index_base_path = common.getString("hdpfs_index_base_path");
 
+
             if (hdpfs_index_base_path.isEmpty()) {
                 System.err.println("hdpfs_index_base_path  is empty");
                 System.exit(-1);
@@ -139,7 +140,7 @@ public abstract class MetaConfigured extends Configured implements Tool {
                 conf.set("mapred.job.tracker", "local");
                 conf.set("local_mock", "true");
             } else {
-                //conf.set("fs.default.name", "hdfs:///");
+                conf.set("fs.default.name", "hdfs://" + name_node);
             }
 
             conf.set("log_name", bussiness.intern());
