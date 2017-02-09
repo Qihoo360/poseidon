@@ -101,5 +101,6 @@ public class DocMetaMapper extends Mapper<LongWritable, Text, Text, Text> {
         }
         lines_.delete(0, lines_.length());
         count_ = 0;
+
     }
 }

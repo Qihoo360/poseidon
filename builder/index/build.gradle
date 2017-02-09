@@ -45,6 +45,10 @@ var
 def copyFile(String src, dst) {
     def srcFile = new File(src)
     def dstFile = new File(dst)
+    if (dstFile.exists()) {
+        dstFile.delete()
+    }
+
     dstFile.withOutputStream{ os->
         srcFile.withInputStream{ ins->
             os << ins   //利用OutputStream的<<操作符重载，完成从inputstream到OutputStream
