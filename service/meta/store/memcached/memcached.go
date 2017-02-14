@@ -66,7 +66,7 @@ func (rc *Memcached) Set(key, value string) error {
 	return rc.conn.Set(&item)
 }
 
-func (rc *Memcached) Incrby(key string, value int) error {
+func (rc *Memcached) Incrby(key string, value int64) error {
 	var err error
 	return err
 }

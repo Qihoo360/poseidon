@@ -173,7 +173,7 @@ func (m *Meta) Add(w http.ResponseWriter, r *http.Request) {
 
 	results := make([]Pair, len(kvs))
 	for i, k := range kvs {
-		v ,valErr := strconv.Atoi(k.v)
+		v ,valErr := strconv.ParseInt(k.v, 10, 64)
 		if valErr != nil {
 			results[i].v = "OK"
 			glog.Infof("Add key=[%v] value=[%v] value invalid", k.key, k.v)

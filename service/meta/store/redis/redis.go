@@ -118,7 +118,7 @@ func (rc *Redis) Set(key string, val string) error {
 }
 
 // Set sets a value with the key into redis.
-func (rc *Redis) Incrby(key string, val int) error {
+func (rc *Redis) Incrby(key string, val int64) error {
 	var err error
 	if _, err = rc.do("INCRBY", key, val); err != nil {
 		return err
