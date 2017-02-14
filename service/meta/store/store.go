@@ -21,6 +21,9 @@ type Store interface {
 	// Set sets a value with key where the key exists or not
 	Set(key, value string) error
 
+	// Set sets a value with key where the key exists or not
+	Incrby(key string, value int) error
+
 	// Delete deletes a key/value pair from the store
 	Delete(key string) error
 }

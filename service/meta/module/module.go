@@ -46,6 +46,7 @@ func (m *Meta) Initialize() error {
 
 	simgo.HandleFunc("/service/meta/{business}/{metaType:\\bdoc\\b|\\bindex\\b}/get", m.Get, m).Methods("POST")
 	simgo.HandleFunc("/service/meta/{business}/{metaType:\\bdoc\\b|\\bindex\\b}/set", m.Set, m).Methods("POST")
+	simgo.HandleFunc("/service/meta/{business}/add", m.Add, m).Methods("POST")
 
 	return nil
 }

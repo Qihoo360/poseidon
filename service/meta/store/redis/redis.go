@@ -117,6 +117,16 @@ func (rc *Redis) Set(key string, val string) error {
 	return err
 }
 
+// Set sets a value with the key into redis.
+func (rc *Redis) Incrby(key string, val int) error {
+	var err error
+	if _, err = rc.do("INCRBY", key, val); err != nil {
+		return err
+	}
+
+	return err
+}
+
 // Delete deletes key in redis.
 func (rc *Redis) Delete(key string) error {
 	_, err := rc.do("DEL", key)
