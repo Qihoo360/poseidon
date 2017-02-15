@@ -3,11 +3,13 @@ package InvertedIndex;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Map;
 
 import InvertedIndex.plugin.LogParserFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
@@ -22,6 +24,20 @@ import org.json.JSONObject;
 import InvertedIndex.plugin.Util;
 
 public class InvertedIndexGenerate extends Configured implements Tool {
+    /** 日志的数量 */
+    public static final String STAT_DOC_NUM = "docNum";
+    /** 原始日志的文件大小  */
+    public static final String STAT_DOC_SIZE = "docSize";
+    /** 压缩后的日志文件大小 /day */
+    public static final String STAT_DOC_SIZE_COMPRESSED = "docSizeCompressed";
+    /** 索引的文件大小 /index/day 去除 /index/day/meta 和 /index/day/middle  */
+    public static final String STAT_INDEX_SIZE_COMPRESSED = "indexSizeCompressed";
+    /** 日志的meta文件大小(写入到nosql) /docid/day  */
+    public static final String STAT_DOCID_SIZE = "docidSize";
+    /** 索引的meta文件大小(写入到nosql) /docid/day/meta */
+    public static final String STAT_INDEX_META_SIZE = "indexMetaSize";
+    /** 索引的原始文件，包括 token field doc_id_list doc_num 四元组，用于进一步分析 /index/day/middle */
+    public static final String STAT_INDEX_MIDDLE_SIZE = "indexMiddleSize";
 
     public static void main(String[] args)
             throws IOException, URISyntaxException, ClassNotFoundException, InterruptedException {
@@ -79,6 +95,7 @@ public class InvertedIndexGenerate extends Configured implements Tool {
             //fs_default_name = "hdfs://" + name_node;
         }
         String bussiness = conf.get("log_name");
+        String metaService = conf.get("meta_service");
         String hdpfs_index_base_path = conf.get("hdpfs_index_base_path");
         //转换后的doc日志路径
         String hdfs_path = conf.get("hdfs_path");
@@ -88,6 +105,15 @@ public class InvertedIndexGenerate extends Configured implements Tool {
         String fNameBeginDocid = fs_default_name + hdpfs_index_base_path + "/" + bussiness + "/conf/" + day + "/fname_begin_docid.txt";
         System.err.println(fNameBeginDocid);
         //HDFSFileWriter.CreateFirstDocidList(docidPath, fNameBeginDocid);
+
+        // 先删除所有的计数器
+        updateDocStat(metaService, bussiness, day, STAT_DOC_NUM, -1);
+        updateDocStat(metaService, bussiness, day, STAT_DOC_SIZE, -1);
+        updateDocStat(metaService, bussiness, day, STAT_DOC_SIZE_COMPRESSED, -1);
+        updateDocStat(metaService, bussiness, day, STAT_INDEX_SIZE_COMPRESSED, -1);
+        updateDocStat(metaService, bussiness, day, STAT_DOCID_SIZE, -1);
+        updateDocStat(metaService, bussiness, day, STAT_INDEX_META_SIZE, -1);
+        updateDocStat(metaService, bussiness, day, STAT_INDEX_MIDDLE_SIZE, -1);
 
         Job job = new Job(conf, InvertedIndexGenerate.class.getSimpleName());
         DistributedCache.addCacheFile(new URI(fNameBeginDocid), job.getConfiguration());
@@ -146,6 +172,31 @@ public class InvertedIndexGenerate extends Configured implements Tool {
 
         FileOutputFormat.setOutputPath(job, new Path(arg0[1]));
         job.waitForCompletion(true);
+
+        // 结束之后更新压缩的大小
+        FileSystem fs = FileSystem.get(conf);
+
+        String basePath = fs_default_name + hdfs_path + "/";
+
+
+
+        updateDocStat(metaService, bussiness, day, STAT_DOC_SIZE_COMPRESSED,
+                fs.getContentSummary(new Path(basePath + "/" + day)).getSpaceConsumed());
+        updateDocStat(metaService, bussiness, day, STAT_DOCID_SIZE,
+                fs.getContentSummary(new Path(basePath + "/docid/" + day)).getSpaceConsumed());
+
+        long indexMetaSize = fs.getContentSummary(new Path(basePath + "/index/" + day + "/meta")).
+                getSpaceConsumed();
+        long indexMiddleSize = fs.getContentSummary(new Path(basePath + "/index/" + day + "/middle")).
+                getSpaceConsumed();
+        long indexAllSize = fs.getContentSummary(new Path(basePath + "/index/" + day)).
+                getSpaceConsumed();
+
+        updateDocStat(metaService, bussiness, day, STAT_INDEX_SIZE_COMPRESSED,
+                indexAllSize - indexMetaSize - indexMiddleSize);
+        updateDocStat(metaService, bussiness, day, STAT_INDEX_META_SIZE, indexMetaSize);
+        updateDocStat(metaService, bussiness, day, STAT_INDEX_MIDDLE_SIZE, indexMiddleSize);
+
         return 0;
     }
 
@@ -192,6 +243,7 @@ public class InvertedIndexGenerate extends Configured implements Tool {
             }
             conf.set("name_node", name_node);
             conf.set("hdpfs_index_base_path", hdpfs_index_base_path);
+            conf.set("meta_service", common.getString("meta_service"));
 
             int line_per_doc = common.getInt("line_per_doc");
             if (line_per_doc > 0) {
@@ -305,5 +357,33 @@ public class InvertedIndexGenerate extends Configured implements Tool {
     public Configuration getConf() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    public static void updateDocStat(String metaService, String bussiness, String logDay,
+                String name, long cnt) {
+        int maxRetryCnt = 5;
+        int retryCnt = 0;
+
+        String shortDay = logDay.replace("-", "");
+        String key = "stat_" + bussiness + "_" + shortDay + "_" + name;
+        String toPostStr = key + "\t" + cnt;
+        String metaUrl = "http://" + metaService + "/service/meta/" + bussiness + "/add";
+        while (true) {
+            MetaSetter metaSetter = new MetaSetter(metaUrl);
+            String result = metaSetter.Post(toPostStr);
+            if (result == null || !result.contains("OK")) {
+                System.err.println("#" + retryCnt + " meta add error: " + toPostStr + "  " + result);
+                ++retryCnt;
+                if(retryCnt >= maxRetryCnt) {
+                    System.err.println("Already try add max times " + retryCnt + " for " + toPostStr);
+                    break;
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {}
+            } else {
+                break;
+            }
+        }
     }
 }

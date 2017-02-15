@@ -30,6 +30,13 @@ public class InvertedIndexGenerateMapper extends Mapper<LongWritable, Text, Text
     private int process_line_count_ = 0;
     private LogParser logparser = null;
 
+    private String metaService_;
+    private String bussiness_;
+    private String logDay_;
+
+    private long docNum = 0;
+    private long docSize = 0;
+
     static {
         System.err.println("InvertedIndexGenerateMapper-Encoding: " + Charset.defaultCharset().displayName());
     }
@@ -41,6 +48,11 @@ public class InvertedIndexGenerateMapper extends Mapper<LongWritable, Text, Text
         Configuration conf = context.getConfiguration();
         total_line_per_doc_ = conf.getInt("total_line_per_doc", 128);
         log_dir_level_ = conf.getInt("log_dir_level", 1);
+
+        metaService_ = context.getConfiguration().get("meta_service");
+        bussiness_ = context.getConfiguration().get("log_name");
+        logDay_ = context.getConfiguration().get("log_day");
+
         FileSplit split = (FileSplit) context.getInputSplit();
         String filename = GetFileName(split);
         GetBeginDocId(filename, context);
@@ -121,6 +133,12 @@ public class InvertedIndexGenerateMapper extends Mapper<LongWritable, Text, Text
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
         super.cleanup(context);
+
+        // 更新日志的数量和大小
+        InvertedIndexGenerate.updateDocStat(metaService_, bussiness_, logDay_,
+                InvertedIndexGenerate.STAT_DOC_NUM, docNum);
+        InvertedIndexGenerate.updateDocStat(metaService_, bussiness_, logDay_,
+                InvertedIndexGenerate.STAT_DOC_SIZE, docSize);
     }
 
     @Override
@@ -169,7 +187,12 @@ public class InvertedIndexGenerateMapper extends Mapper<LongWritable, Text, Text
 				return;
 			}
 			*/
-            logparser.ParseLine(value.toString(), begin_docid_ + total_line_count_ / total_line_per_doc_,
+            String val = value.toString();
+            // 记录本次的文章数量和文章大小
+            ++docNum;
+            docSize += val.length();
+
+            logparser.ParseLine(val, begin_docid_ + total_line_count_ / total_line_per_doc_,
                     total_line_count_ % total_line_per_doc_, context);
             total_line_count_++;
             //line_ = "";
