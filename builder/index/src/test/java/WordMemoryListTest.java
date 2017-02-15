@@ -11,7 +11,7 @@ public class WordMemoryListTest {
         wml.addDocIds("1,1;1,1;1,1;1,1;1,2", 5);
         wml.addDocIds("8,1;1,1;1,3", 3);
 
-        PoseidonIf.DocIdList docIdList = wml.getDocIdList();
+        PoseidonIf.DocIdList docIdList = wml.getDocIdList(true);
 
         StringBuffer sb = new StringBuffer();
         GetDocIdListStr(docIdList, sb);

@@ -180,20 +180,17 @@ public class InvertedIndexGenerate extends Configured implements Tool {
 
 
         updateDocStat(metaService, bussiness, day, STAT_DOC_SIZE_COMPRESSED,
-                fs.getContentSummary(new Path(basePath + "/" + day)).getSpaceConsumed());
+                fs.getContentSummary(new Path(basePath + "/" + day)).getLength());
         updateDocStat(metaService, bussiness, day, STAT_DOCID_SIZE,
-                fs.getContentSummary(new Path(basePath + "/docid/" + day)).getSpaceConsumed());
+                fs.getContentSummary(new Path(basePath + "/docid/" + day)).getLength());
 
-        long indexMetaSize = fs.getContentSummary(new Path(basePath + "/index/" + day + "/meta")).
-                getSpaceConsumed();
         long indexMiddleSize = fs.getContentSummary(new Path(basePath + "/index/" + day + "/middle")).
-                getSpaceConsumed();
+                getLength();
         long indexAllSize = fs.getContentSummary(new Path(basePath + "/index/" + day)).
-                getSpaceConsumed();
+                getLength();
 
         updateDocStat(metaService, bussiness, day, STAT_INDEX_SIZE_COMPRESSED,
-                indexAllSize - indexMetaSize - indexMiddleSize);
-        updateDocStat(metaService, bussiness, day, STAT_INDEX_META_SIZE, indexMetaSize);
+                indexAllSize - indexMiddleSize);
         updateDocStat(metaService, bussiness, day, STAT_INDEX_MIDDLE_SIZE, indexMiddleSize);
 
         return 0;
