@@ -9,6 +9,13 @@ import (
 	"log"
 	"net/http"
 	"sync"
+
+	"strings"
+	"strconv"
+	"reflect"
+	"unsafe"
+	"encoding/base64"
+	"fmt"
 )
 
 var (
@@ -49,6 +56,7 @@ func NewQuery() *QueryBody {
 
 type Proxy struct {
 	poseidon_search_url string
+	meta_service string
 	Sqp                 *SearchRequestParams
 }
 
@@ -61,8 +69,10 @@ func New() *Proxy {
 func (p *Proxy) Initialize() error {
 	fw := simgo.DefaultFramework
 	p.poseidon_search_url, _ = fw.Conf.SectionGet("proxy", "poseidon_search_url")
+	p.meta_service, _ = fw.Conf.SectionGet("proxy", "meta_service")
 
 	simgo.HandleFunc("/service/proxy/mdsearch", p.MdsearchAction, p).Methods("POST")
+	simgo.HandleFunc("/service/proxy/stat", p.Stat, p).Methods("POST")
 	p.Sqp = NewSearchRequestParams()
 	return nil
 }
@@ -108,6 +118,84 @@ func (p *Proxy) MdsearchAction(w http.ResponseWriter, r *http.Request) {
 	w.Write(buf.Bytes())
 }
 
+
+func (p *Proxy) Stat(w http.ResponseWriter, r *http.Request) {
+	params, err := p.getparams(r, true)
+
+	if err != nil {
+		panic(err)
+	}
+
+	business := params.Business
+	types := [6]string{"docNum", "docSize", "docSizeCompressed", "indexSizeCompressed",
+		"docidSize", "indexMiddleSize"}
+	keys := make([]string, 6 * len(params.Days))
+	for i, day := range params.Days {
+		newday, _ := day.(string)
+		newday = strings.Replace(newday, "-", "", -1)
+		for j, t := range types {
+			keys[i * 6 + j] = "stat_" + business + "_" + newday + "_" + t
+		}
+	}
+
+	postStr := strings.Join(keys, "\n")
+
+	sh := (*reflect.StringHeader)(unsafe.Pointer(&postStr))
+	bh := reflect.SliceHeader{sh.Data, sh.Len, 0}
+	postBytes := *(*[]byte)(unsafe.Pointer(&bh))
+
+	body := bytes.NewBuffer(postBytes)
+	url := "http://" + p.meta_service + "/service/meta/" + business + "/index/get"
+	req, err := http.NewRequest("POST", url, body)
+	log.Println("send url ", url, postStr)
+	if err != nil {
+		log.Printf("send url %s httpNewErr=%v", url, err)
+		panic(err)
+	}
+
+	req.Header.Set("Content-Type", "text/plain")
+	//req.Header.Add("Accept-Encoding", "identity")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil  {
+		log.Printf("send url %s doClientErr=%v", url, err)
+		panic(err)
+	}
+
+	defer resp.Body.Close()
+
+	re, err := ioutil.ReadAll(resp.Body)
+
+
+	buf := bytes.NewBuffer([]byte("{"))
+	for i, line := range strings.Split(string(re), "\n") {
+		tokens := strings.Split(line, "\t")
+		if(len(tokens) != 2) {
+			continue
+		}
+		var val int64
+		val = 0
+		if(len(tokens[1]) > 0) {
+			valBytes, _ := base64.StdEncoding.DecodeString(tokens[1])
+			val, _ = strconv.ParseInt(string(valBytes), 10, 64)
+		}
+		keyTokens := strings.Split(tokens[0], "_")
+		keyLen := len(keyTokens)
+		curT := keyTokens[keyLen - 1]
+		curDay := keyTokens[keyLen - 2]
+		if(i > 0) {
+			buf.WriteString(",\n")
+		}
+		str2 := fmt.Sprintf("%d", val)
+		buf.WriteString("\"" + curDay + "_" + curT + "\": " + str2 )
+	}
+
+	buf.WriteString("}")
+	w.Write(buf.Bytes())
+}
+
+
 /**
  * send request put data into channel
  * @param  {[type]} this *SearchController) send(day string, c chan string [description]
@@ -149,7 +237,7 @@ func (p *Proxy) send(day string, c chan string) {
 	c <- string(re)
 }
 
-func (p *Proxy) getparams(r *http.Request) (*SearchRequestParams, error) {
+func (p *Proxy) getparams(r *http.Request, isSearch bool) (*SearchRequestParams, error) {
 	jsonenc := json.NewDecoder(r.Body)
 	searchParams := make(map[string]interface{}, 1000)
 	err := jsonenc.Decode(&searchParams)
@@ -162,13 +250,16 @@ func (p *Proxy) getparams(r *http.Request) (*SearchRequestParams, error) {
 		return nil, ErrConvert
 	}
 
-	p.Sqp.Page_size = int32(query["page_size"].(float64))
-	p.Sqp.Page_number = int32(query["page_number"].(float64))
-	p.Sqp.Business = query["business"].(string)
-	p.Sqp.Keywords = query["keywords"].(map[string]interface{})
+	if(isSearch) {
+		p.Sqp.Page_size = int32(query["page_size"].(float64))
+		p.Sqp.Page_number = int32(query["page_number"].(float64))
+		p.Sqp.Keywords = query["keywords"].(map[string]interface{})
 
-	p.Sqp.Options = query["options"].(map[string]interface{})
-	//Sqp.Filters = query["filters"].(map[string]interface{})
+		p.Sqp.Options = query["options"].(map[string]interface{})
+		//Sqp.Filters = query["filters"].(map[string]interface{})
+	}
+
+	p.Sqp.Business = query["business"].(string)
 
 	if query["day"] != nil {
 		p.Sqp.Day = query["day"].(string)
@@ -181,7 +272,7 @@ func (p *Proxy) getparams(r *http.Request) (*SearchRequestParams, error) {
 }
 
 func (p *Proxy) GetDays(r *http.Request) ([]string, error) {
-	params, err := p.getparams(r)
+	params, err := p.getparams(r, true)
 	if err != nil {
 		return nil, err
 	}
