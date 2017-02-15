@@ -1,7 +1,7 @@
 package poseidon
 
 import (
-	//"encoding/base64"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	poseidon_if "github.com/Qihoo360/poseidon/service/searcher/proto"
@@ -58,7 +58,7 @@ func (self *DocDataResult) ToJson(business string) string {
 	}
 
 	return fmt.Sprintf("{\"doc_id\":%d,\"row_index\":%d,\"data\":\"%s\"}",
-		self.DocId, self.RowIndex, /*base64.StdEncoding.EncodeToString(data)*/ data)
+		self.DocId, self.RowIndex, base64.StdEncoding.EncodeToString(data))
 }
 
 type DocDataResultList []*DocDataResult
