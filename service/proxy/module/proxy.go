@@ -120,7 +120,7 @@ func (p *Proxy) MdsearchAction(w http.ResponseWriter, r *http.Request) {
 
 
 func (p *Proxy) Stat(w http.ResponseWriter, r *http.Request) {
-	params, err := p.getparams(r, true)
+	params, err := p.getparams(r, false)
 
 	if err != nil {
 		panic(err)
