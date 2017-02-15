@@ -257,7 +257,7 @@ public class InvertedIndexGenerateReducer extends Reducer<Text, Text, Text, Byte
                 continue;
             }
 
-            int curDocNum = Integer.parseInt(curTokens[3]);
+            int curDocNum = Integer.parseInt(curTokens[3].trim());
             String curWord = curTokens[0];
             String curField = curTokens[1];
 

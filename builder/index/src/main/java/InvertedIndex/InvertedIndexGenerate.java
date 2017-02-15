@@ -176,8 +176,7 @@ public class InvertedIndexGenerate extends Configured implements Tool {
         // 结束之后更新压缩的大小
         FileSystem fs = FileSystem.get(conf);
 
-        String basePath = fs_default_name + hdfs_path + "/";
-
+        String basePath = fs_default_name + hdfs_path;
 
 
         updateDocStat(metaService, bussiness, day, STAT_DOC_SIZE_COMPRESSED,
