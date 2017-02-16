@@ -565,9 +565,13 @@ public class InvertedIndexGenerateReducer extends Reducer<Text, Text, Text, Byte
     }
 
     public static void GetDocIdListStr(DocIdList build, StringBuffer ss) {
+        GetDocIdListStr(build, ss, 1);
+    }
 
-        for (int i = 1; i < build.getDocIdsCount(); i++) {
-            if (i == 1) {
+    public static void GetDocIdListStr(DocIdList build, StringBuffer ss, int startOffset) {
+
+        for (int i = startOffset; i < build.getDocIdsCount(); i++) {
+            if (i == startOffset) {
                 ss.append("\t");
             } else {
                 ss.append(";");

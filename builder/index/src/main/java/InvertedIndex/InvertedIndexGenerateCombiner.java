@@ -56,7 +56,7 @@ public class InvertedIndexGenerateCombiner extends Reducer<Text, Text, Text, Tex
                 StringBuffer curBuf = new StringBuffer();
                 curBuf.append(curWord).append("\t").append(curField);
                 PoseidonIf.DocIdList curDocIdList = curMd.getDocIdList(false);
-                InvertedIndexGenerateReducer.GetDocIdListStr(curDocIdList, curBuf);
+                InvertedIndexGenerateReducer.GetDocIdListStr(curDocIdList, curBuf, 0);
                 curBuf.append("\t").append(curMd.pv).append("\n");
                 // save middle
                 context.write(key, new Text(curBuf.toString()));
