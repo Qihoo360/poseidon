@@ -49,8 +49,8 @@ CentOS release 6.2 (Final)
 ### dist：
 
     index-0.1.tar
-    proxy-0.1.tar.gz
-    searcher-0.1.tar.gz
+    poseidon_proxy-0.1.tar.gz
+    poseidon_searcher-0.1.tar.gz
     idgenerator-0.1.tar.gz
     meta-0.1.tar.gz
     docformat-0.1.tar.gz
@@ -71,12 +71,12 @@ CentOS release 6.2 (Final)
 
 ### 2. 安装service
 
-#### idgenerator,proxy,searcher,meta
+#### idgenerator,poseidon_proxy,poseidon_searcher,meta
 `cd dist`, 然后执行下面脚本 
 
 ```bash
 ROOT=`pwd`
-for f in idgenerator proxy searcher meta
+for f in idgenerator poseidon_proxy poseidon_searcher meta
 do
     cd $ROOT
     tar -zxvf ${f}*.tar.gz
