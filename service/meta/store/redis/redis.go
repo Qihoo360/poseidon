@@ -80,7 +80,11 @@ func (rc *Redis) MultiGet(keys []string) map[string] /*the-key*/ store.GetResult
 		var r store.GetResult
 		if v, err := c.Receive(); err == nil {
 			r.Err = nil
-			r.Value = string(v.([]byte))
+			if v == nil {
+				//r.Value = nil
+			} else {
+				r.Value = string(v.([]byte))
+			}
 			rv[keys[i]] = r
 		} else {
 			if err != redis.ErrNil {
@@ -107,6 +111,16 @@ ERROR:
 func (rc *Redis) Set(key string, val string) error {
 	var err error
 	if _, err = rc.do("SET", key, val); err != nil {
+		return err
+	}
+
+	return err
+}
+
+// Set sets a value with the key into redis.
+func (rc *Redis) Incrby(key string, val int64) error {
+	var err error
+	if _, err = rc.do("INCRBY", key, val); err != nil {
 		return err
 	}
 
@@ -144,7 +158,9 @@ func (rc *Redis) connectInit() {
 
 	// initialize a new pool
 	rc.p = &redis.Pool{
-		MaxIdle:     3,
+		MaxIdle:     10,
+		MaxActive: 100,
+		Wait: true,
 		IdleTimeout: rc.config.Timeout * 10,
 		Dial:        dialFunc,
 	}

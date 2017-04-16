@@ -57,7 +57,7 @@ func (self *DocDataResult) ToJson(business string) string {
 		data = []byte(self.Err.Error())
 	}
 
-	return fmt.Sprintf("{\"doc_id\":%d,\"row_index\":%d,\"base64\":1,\"data\":\"%s\"}",
+	return fmt.Sprintf("{\"doc_id\":%d,\"row_index\":%d,\"data\":\"%s\"}",
 		self.DocId, self.RowIndex, base64.StdEncoding.EncodeToString(data))
 }
 

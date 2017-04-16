@@ -125,8 +125,10 @@ func (self *InvertedIndexGzClient) fetchIndexData(day, field, token string, meta
 		log.Printf("ReadHDFS indexData result tk=%s items=%d", tk, len(items.DocIds))
 	}
 
-	if items, ok := protoIndex.Index[normalizedToken(field, token)]; ok {
-		log.Printf("ReadHDFS indexData ok, token=%s,docIdCount=%d", normalizedToken(field, token), len(items.DocIds))
+	ntoken := strings.ToLower(neturl.QueryEscape(token))
+
+	if items, ok := protoIndex.Index[ntoken]; ok {
+		log.Printf("ReadHDFS indexData ok, token=%s,docIdCount=%d", ntoken, len(items.DocIds))
 		for i, item := range items.DocIds {
 
 			docId := item.DocId
@@ -160,6 +162,7 @@ func (self *InvertedIndexGzClient) FetchIndex(day string, business string, keywo
 	for filed, token := range keywords {
 		sk := BusinessTraitInstance(business).IndexStoredKey(day, filed, token)
 		dockeys[sk] = ""
+		log.Println("Add dockey ", sk)
 	}
 	result, err = SymcGet(BusinessTraitInstance(business).IndexStoredAddr(), dockeys)
 	if err != nil {

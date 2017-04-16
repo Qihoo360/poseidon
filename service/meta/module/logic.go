@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"strconv"
 
 	"github.com/Qihoo360/poseidon/service/meta/store"
 	"github.com/golang/glog"
@@ -21,7 +22,8 @@ func (m *Meta) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	metaType := vars["metaType"]
 	business := vars["business"]
-
+	//glog.Infof("Get metaType=%v business=%v key=%v", metaType, business,
+	//	getBackendStoreName(metaType, business));
 	var db store.Store
 	if v, ok := m.backend[getBackendStoreName(metaType, business)]; ok {
 		db = v.db
@@ -58,7 +60,7 @@ type Pair struct {
 	v   string
 }
 
-func parseRequest(body string) ([]Pair, error) {
+func parseRequest(body string, isBase64 bool) ([]Pair, error) {
 	glog.Infof("Body:\n%v", body)
 	inputs := strings.Split(strings.TrimSpace(body), "\n")
 	kvs := make([]Pair, len(inputs))
@@ -72,11 +74,15 @@ func parseRequest(body string) ([]Pair, error) {
 		k := strings.FieldsFunc(input, f)
 		if len(k) == 2 {
 			kvs[i].key = k[0]
-			v, err := base64.StdEncoding.DecodeString(k[1])
-			if err == nil {
-				kvs[i].v = string(v)
+			if isBase64 {
+				v, err := base64.StdEncoding.DecodeString(k[1])
+				if err == nil {
+					kvs[i].v = string(v)
+				} else {
+					return nil, fmt.Errorf("row %d error, base64 decode failed [%v]", i, k[1])
+				}
 			} else {
-				return nil, fmt.Errorf("row %d error, base64 decode failed [%v]", i, k[1])
+				kvs[i].v = string(k[1])
 			}
 		} else {
 			return nil, fmt.Errorf("row %d error, cannot split to key and value [%v]", i, input)
@@ -108,7 +114,7 @@ func (m *Meta) Set(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kvs, err := parseRequest(string(body))
+	kvs, err := parseRequest(string(body), true)
 	if err != nil {
 		glog.Errorf("Parse request failed : %v", err.Error())
 		w.WriteHeader(403)
@@ -124,6 +130,70 @@ func (m *Meta) Set(w http.ResponseWriter, r *http.Request) {
 			glog.Infof("Set key=[%v] value=[%v] OK", k.key, k.v)
 		} else {
 			glog.Errorf("Set key [%v] failed : %v", k.key, err.Error())
+			results[i].v = err.Error()
+		}
+	}
+
+	for _, r := range results {
+		w.Write([]byte(r.key))
+		w.Write([]byte("\t"))
+		w.Write([]byte(r.v))
+		w.Write([]byte("\n"))
+	}
+}
+
+func (m *Meta) Add(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	metaType := "index"
+	business := vars["business"]
+
+	var db store.Store
+	if v, ok := m.backend[getBackendStoreName(metaType, business)]; ok {
+		db = v.db
+	} else {
+		glog.Errorf("backend store name=%v NOT FOUND", getBackendStoreName(metaType, business))
+		w.WriteHeader(403)
+		return
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		glog.Errorf("Read http body failed : %v", err.Error())
+		w.WriteHeader(500)
+		return
+	}
+
+	kvs, err := parseRequest(string(body), false)
+	if err != nil {
+		glog.Errorf("Parse request failed : %v", err.Error())
+		w.WriteHeader(403)
+		return
+	}
+
+	results := make([]Pair, len(kvs))
+	for i, k := range kvs {
+		v ,valErr := strconv.ParseInt(k.v, 10, 64)
+		if valErr != nil {
+			results[i].v = "OK"
+			glog.Infof("Add key=[%v] value=[%v] value invalid", k.key, k.v)
+			continue
+		}
+
+		var err error;
+		// 小于0进行删除
+		if(v <= 0) {
+			err = db.Delete(k.key)
+		} else {
+			err = db.Incrby(k.key, v)
+		}
+
+		results[i].key = k.key
+		if err == nil {
+			results[i].v = "OK"
+			glog.Infof("Add key=[%v] value=[%v] OK", k.key, k.v)
+		} else {
+			glog.Errorf("Add key [%v] failed : %v", k.key, err.Error())
 			results[i].v = err.Error()
 		}
 	}

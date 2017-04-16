@@ -46,6 +46,7 @@ func (m *Meta) Initialize() error {
 
 	simgo.HandleFunc("/service/meta/{business}/{metaType:\\bdoc\\b|\\bindex\\b}/get", m.Get, m).Methods("POST")
 	simgo.HandleFunc("/service/meta/{business}/{metaType:\\bdoc\\b|\\bindex\\b}/set", m.Set, m).Methods("POST")
+	simgo.HandleFunc("/service/meta/{business}/add", m.Add, m).Methods("POST")
 
 	return nil
 }
@@ -96,5 +97,6 @@ func (m *Meta) initBackendStore(section string) error {
 	businessName := nn[4]
 	name := getBackendStoreName(metaType, businessName)
 	m.backend[name] = backend
+	glog.Infof("initBackendStore %v with type %v", name, backend.storeType)
 	return nil
 }

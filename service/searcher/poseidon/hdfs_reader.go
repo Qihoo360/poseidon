@@ -37,7 +37,7 @@ func (self *HDFSReader) httpGet(url string, domain string, timeout int) (body []
 		log.Printf("httpGet read body error %s,url=%s", err.Error(), url)
 		return nil, err
 	}
-	// log.Printf("httpGet code=%d,body_len=%d", resp.StatusCode, len(body))
+	// log.Printf("httpGet url=%s code=%d,body_len=%d", url, resp.StatusCode, len(body))
 	return body, nil
 }
 

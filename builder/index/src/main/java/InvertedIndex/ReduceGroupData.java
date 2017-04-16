@@ -16,7 +16,7 @@ public class ReduceGroupData {
         public long pv_ = 0;
     }
 
-    static class Result {
+    public static class Result {
         //             word    data
         public HashMap<String, MetaData> data_ = new HashMap<String, MetaData>();
     }
@@ -109,7 +109,6 @@ public class ReduceGroupData {
                 DocId docid = docid_list_build_.getDocIds(0);
                 long id = docid.getDocId();
                 int index = docid.getRowIndex();
-                docid = null;
                 docid_list_build_.clearDocIds();
 
                 DocId.Builder new_docid_build = DocId.newBuilder();
