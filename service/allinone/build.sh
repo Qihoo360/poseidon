@@ -13,10 +13,10 @@ mkdir allinone
 
 go build -o bin/$APP
 
-cp -r bin/ allinone/
-cp -r conf/ allinone/
-cp serverctl allinone/
-cp -r logs allinone/
+rsync -r bin allinone/
+rsync -r conf allinone/
+rsync serverctl allinone/
+rsync -r logs allinone/
 
 tar -zcvf $ROOT_DIR/../../dist/$APP-$VER.tar.gz allinone/
 

@@ -2,8 +2,8 @@
 rw=`dirname $0` 
 cd $rw 
 ROOT_DIR=`pwd`
-APP="poseidon_searcher"
-PREFIX="poseidon_"
+APP="searcher"
+PREFIk="poseidon_"
 
 wait_for_pid () {
         try=0

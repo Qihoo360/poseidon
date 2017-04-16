@@ -2,7 +2,7 @@
 rw=`dirname $0` 
 cd $rw 
 ROOT_DIR=`pwd`
-APP="poseidon_proxy"
+APP="proxy"
 PREFIX="poseidon_"
 
 wait_for_pid () {

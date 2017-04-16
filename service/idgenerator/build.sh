@@ -14,10 +14,10 @@ mkdir idgenerator
 
 go build -o bin/$APP
 
-cp -r bin/ idgenerator/
-cp -r conf/ idgenerator/
-cp serverctl idgenerator/
-cp -r logs idgenerator/
+rsync -r bin idgenerator/
+rsync -r conf idgenerator/
+rsync serverctl idgenerator/
+rsync -r logs idgenerator/
 
 
 tar -zcvf $ROOT_DIR/../../dist/idgenerator-$VER.tar.gz idgenerator/
