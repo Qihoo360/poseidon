@@ -40,7 +40,7 @@ Poseidon 系统就是为了解决这个需求，能在几秒钟内从数百万�
 存放了相关的技术文档。
 
 * 项目设计文档
-    * [设计思路和原理(2016上海QCon大会分享PPT)](docs/design_detail.pdf)
+    * [设计思路和原理(2016上海QCon大会分享PPT)](docs/design_detail.pdf) [QCon现场视频连接](http://mp.weixin.qq.com/s/UAzWDt7flOVXYdSF0I7LyQ)
     * [如何构建倒排索引](docs/build_inverted_index.md)
     * [术语解释](docs/component.md)
     * [构建倒排索引时所需的配置文件模板的说明](docs/config.md)
